@@ -64,7 +64,6 @@ export class UsersService implements IUserService {
       },
     });
     if (send) {
-      console.log(this.generatedCode);
       return true;
     } else {
       return false;

@@ -40,7 +40,32 @@ export class AuthController {
   @Get('status')
   @UseGuards(AuthenticatedGuard)
   async status(@Req() req: Request, @Res() res: Response) {
-    res.send(req.user);
+    const cookie = req.cookies.Session_JS;
+    const auth = req.user;
+    const respondData = {
+      cookie,
+      auth,
+    };
+    res.send(respondData);
+  }
+  @Get('checkCookie')
+  async check(@Req() req: Request, @Res() res: Response) {
+    const cookieExist = req.cookies.Session_JS;
+    if (!cookieExist) {
+      res.send(HttpStatus.OK);
+    } else {
+      res.send(HttpStatus.BAD_GATEWAY);
+    }
+  }
+  @Get('removeCookie')
+  async removeCookie(@Req() req: Request, @Res() res: Response) {
+    const cookieExist = req.cookies.Session_JS;
+    if (cookieExist) {
+      res.clearCookie('Session_JS');
+      res.send(HttpStatus.OK);
+    } else {
+      res.send(HttpStatus.ACCEPTED);
+    }
   }
   @Post('statusValid')
   async validCode(@Body() validCode: ValidAccount, @Res() res: Response) {
@@ -48,7 +73,6 @@ export class AuthController {
       const result = await this.userService.validVertical(validCode);
       res.status(HttpStatus.OK).clearCookie('token').send(result); // Gửi phản hồi dựa trên nhu cầu của bạn
     } catch (error) {
-      console.log('Mã sai');
       res.status(HttpStatus.CONFLICT).send({ message: 'Mã không đúng' });
     }
   }
