@@ -1,4 +1,6 @@
 import { UsersPromise } from 'src/auth/dtos/Users.dto';
+import { Messages } from 'src/entities/Message';
+import { Rooms } from 'src/entities/Rooms';
 
 export type CreateUserDetails = {
   fullName: string;
@@ -45,3 +47,13 @@ export interface AuthenticatedRequest extends Request {
   user: UsersPromise;
 }
 export type RoomsIdentityType = 'authors' | 'recipient';
+export type CreateMessageParams = {
+  //id: string;
+  content: string;
+  roomsID: string;
+  user: UsersPromise;
+};
+export type CreateMessageResponse = {
+  message: Messages;
+  rooms: Rooms;
+};

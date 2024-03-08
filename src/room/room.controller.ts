@@ -1,4 +1,12 @@
-import { Body, Controller, Get, Inject, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Inject,
+  Param,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import { AuthenticatedGuard } from '../auth/untills/Guards';
 import { Routes, Services } from '../untills/constain';
 import { IRoomsService } from './room';
@@ -31,5 +39,9 @@ export class RoomController {
   @Get()
   async getRooms(@AuthUser() { id }: UsersPromise) {
     return this.roomsService.getRooms(id);
+  }
+  @Get(':id')
+  async getRoomsById(@Param('id') id: string) {
+    return this.roomsService.findById(id);
   }
 }

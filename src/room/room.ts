@@ -1,6 +1,7 @@
 import { CreateRoomsParams } from '../untills/types';
 import { UsersPromise } from 'src/auth/dtos/Users.dto';
 import { Rooms } from 'src/entities/Rooms';
+// import { RoomsPromise } from './dto/RoomDTO.dto';
 
 export interface IRoomsService {
   createRooms(
@@ -8,7 +9,7 @@ export interface IRoomsService {
     roomsParams: CreateRoomsParams,
   ): Promise<Rooms>;
   getRooms(id: string): Promise<Rooms[]>;
-  // findById(id: string): Promise<RoomsPromise | undefined>;
+  findById(id: string): Promise<Rooms | undefined>;
   // hasAccess(params: AccessParams): Promise<boolean>;
   isCreated(userId: string, recipientId: string): Promise<Rooms | undefined>;
   // save(rooms: RoomsPromise): Promise<RoomsPromise>;

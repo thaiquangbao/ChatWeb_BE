@@ -9,6 +9,7 @@ import { CreateRoomsParams } from 'src/untills/types';
 import { IUserService } from 'src/users/users';
 import { Services } from 'src/untills/constain';
 import { User } from 'src/entities/users';
+// import { RoomsPromise } from './dto/RoomDTO.dto';
 
 @Injectable()
 export class RoomService implements IRoomsService {
@@ -17,6 +18,15 @@ export class RoomService implements IRoomsService {
     @Inject(Services.USERS) private readonly userService: IUserService,
     @InjectModel(User.name) private usersModel: Model<User>,
   ) {}
+  async findById(id: string): Promise<Rooms> {
+    const rooms = await this.roomsModel
+      .findOne({ _id: id })
+      .populate('creator')
+      .populate('recipient')
+      .populate('lastMessageSent');
+
+    return rooms;
+  }
   async getRooms(id: string): Promise<Rooms[]> {
     try {
       const rooms = await this.roomsModel.find({

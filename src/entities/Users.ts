@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Exclude } from 'class-transformer';
+import { Messages } from './Message';
 
 @Schema({
   timestamps: true,
@@ -18,5 +19,7 @@ export class User {
   dateOfBirth: string;
   @Prop({ type: String, required: true })
   avatar: string;
+  @Prop({ type: Array })
+  messages: Messages[];
 }
 export const UsersSchema = SchemaFactory.createForClass(User);
