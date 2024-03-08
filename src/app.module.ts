@@ -13,7 +13,9 @@ import { PassportModule } from '@nestjs/passport';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { MailerService } from './mailer/mailer.service';
 import { MiddlewareService } from './middleware/middleware.service';
+import { RoomModule } from './room/room.module';
 import * as moment from 'moment';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 // PassportModule.register({ defaultStrategy: "jwt" }),
 @Module({
   imports: [
@@ -46,6 +48,8 @@ import * as moment from 'moment';
         },
       },
     }),
+    RoomModule,
+    EventEmitterModule.forRoot(),
   ],
   controllers: [],
   providers: [MailerService, MiddlewareService],

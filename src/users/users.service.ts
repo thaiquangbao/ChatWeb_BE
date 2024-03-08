@@ -1,11 +1,19 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { IUserService } from './users';
-import { CreateUserDetails, FindUserByEmail } from 'src/untills/types';
+import {
+  CreateRoomsParams,
+  CreateUserDetails,
+  FindUserByEmail,
+} from 'src/untills/types';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User } from 'src/entities/users';
 import { hashPassword } from 'src/untills/helpers';
-import { CheckUsers, ValidAccount } from 'src/auth/dtos/Users.dto';
+import {
+  CheckUsers,
+  UsersPromise,
+  ValidAccount,
+} from 'src/auth/dtos/Users.dto';
 import { MailerService } from '@nestjs-modules/mailer';
 import { JwtService } from '@nestjs/jwt';
 
@@ -16,6 +24,9 @@ export class UsersService implements IUserService {
     private mailService: MailerService,
     private jwtService: JwtService,
   ) {}
+  findUsersByEmail(roomsParams: CreateRoomsParams): Promise<UsersPromise> {
+    return this.userModel.findOne(roomsParams);
+  }
   private generatedCode: string = '';
   findUsers(informationUser: FindUserByEmail): Promise<User> {
     return this.userModel.findOne(informationUser);

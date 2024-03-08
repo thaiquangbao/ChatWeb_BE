@@ -18,7 +18,7 @@ async function bootstrap() {
       resave: false,
       saveUninitialized: false,
       cookie: {
-        maxAge: 360000,
+        maxAge: 86400,
         path: '/',
       },
     }),

@@ -60,3 +60,12 @@ export class ValidAccount {
   avatar: string;
   code: string;
 }
+export class UsersPromise {
+  id: string;
+  fullName: string;
+  phoneNumber: string;
+  email: string;
+  passWord: string;
+  dateOfBirth: string;
+  avatar: string;
+}

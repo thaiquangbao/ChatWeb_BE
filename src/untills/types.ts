@@ -1,3 +1,5 @@
+import { UsersPromise } from 'src/auth/dtos/Users.dto';
+
 export type CreateUserDetails = {
   fullName: string;
   phoneNumber: string;
@@ -26,3 +28,20 @@ export type ValidCode = {
   avatar: string;
   code: string;
 };
+
+export type CreateRoomsParams = {
+  email: string;
+  message: string;
+};
+export type AccessParams = {
+  id: string;
+  userId: string;
+};
+export type GetConversationMessagesParams = {
+  id: string;
+  limit: number;
+};
+export interface AuthenticatedRequest extends Request {
+  user: UsersPromise;
+}
+export type RoomsIdentityType = 'authors' | 'recipient';

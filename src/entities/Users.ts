@@ -7,9 +7,9 @@ import { Exclude } from 'class-transformer';
 export class User {
   @Prop({ type: String, required: true })
   fullName: string;
-  @Prop({ type: String, required: true, unique: true })
+  @Prop({ type: String, required: true })
   phoneNumber: string;
-  @Prop({ type: String, required: true, unique: true })
+  @Prop({ type: String, required: true })
   email: string;
   @Prop({ type: String, required: true })
   @Exclude() // mật khảu sẻ k hiển thị trên màn hình
