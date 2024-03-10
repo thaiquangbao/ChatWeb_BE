@@ -14,9 +14,9 @@ import { MailerModule } from '@nestjs-modules/mailer';
 import { MailerService } from './mailer/mailer.service';
 import { MiddlewareService } from './middleware/middleware.service';
 import { RoomModule } from './room/room.module';
-import * as moment from 'moment';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { MessagesModule } from './messages/messages.module';
+import { GatewayModule } from './gateway/gateway.module';
 // PassportModule.register({ defaultStrategy: "jwt" }),
 @Module({
   imports: [
@@ -34,7 +34,7 @@ import { MessagesModule } from './messages/messages.module';
         return {
           secret: config.get<string>('JWT_SECRET'),
           signOptions: {
-            expiresIn: moment.duration(1, 'minutes').asSeconds(),
+            expiresIn: config.get<string | number>('JWT_EXPIRES'),
           },
         };
       },
@@ -52,6 +52,7 @@ import { MessagesModule } from './messages/messages.module';
     RoomModule,
     EventEmitterModule.forRoot(),
     MessagesModule,
+    GatewayModule,
   ],
   controllers: [],
   providers: [MailerService, MiddlewareService],

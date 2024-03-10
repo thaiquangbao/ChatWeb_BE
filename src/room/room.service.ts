@@ -5,10 +5,11 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Rooms } from '../entities/Rooms';
 import { Model } from 'mongoose';
 import { UsersPromise } from '../auth/dtos/Users.dto';
-import { CreateRoomsParams } from 'src/untills/types';
-import { IUserService } from 'src/users/users';
-import { Services } from 'src/untills/constain';
-import { User } from 'src/entities/users';
+import { CreateRoomsParams } from '../untills/types';
+import { IUserService } from '../users/users';
+import { Services } from '../untills/constain';
+import { User } from '../entities/users';
+import { Messages } from 'src/entities/Message';
 // import { RoomsPromise } from './dto/RoomDTO.dto';
 
 @Injectable()
@@ -17,14 +18,10 @@ export class RoomService implements IRoomsService {
     @InjectModel(Rooms.name) private roomsModel: Model<Rooms>,
     @Inject(Services.USERS) private readonly userService: IUserService,
     @InjectModel(User.name) private usersModel: Model<User>,
+    @InjectModel(Messages.name) private messagesModel: Model<Messages>,
   ) {}
   async findById(id: string): Promise<Rooms> {
-    const rooms = await this.roomsModel
-      .findOne({ _id: id })
-      .populate('creator')
-      .populate('recipient')
-      .populate('lastMessageSent');
-
+    const rooms = await this.roomsModel.findOne({ _id: id });
     return rooms;
   }
   async getRooms(id: string): Promise<Rooms[]> {

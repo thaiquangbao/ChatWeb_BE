@@ -1,15 +1,25 @@
-import { Body, Controller, Get, Inject, Param, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpStatus,
+  Inject,
+  Post,
+  Res,
+} from '@nestjs/common';
 import { Routes, Services } from '../untills/constain';
 import { IMessageService } from './messages';
-import { CreateMessagesDTO } from './dto/Messages.dto';
+import { CreateMessagesDTO, RoomMessages } from './dto/Messages.dto';
 import { AuthUser } from 'src/untills/decorater';
 import { UsersPromise } from 'src/auth/dtos/Users.dto';
-
+import { Response } from 'express';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 @Controller(Routes.MESSAGES)
 export class MessagesController {
   constructor(
     @Inject(Services.MESSAGES)
     private readonly messageServices: IMessageService,
+    private readonly events: EventEmitter2,
   ) {}
   @Post()
   async createMessage(
@@ -18,13 +28,26 @@ export class MessagesController {
     @Body() createMessagesDTO: CreateMessagesDTO,
   ) {
     //const params = { user, id, content };
-    return this.messageServices.createMessages({ ...createMessagesDTO, user });
+    const messages = await this.messageServices.createMessages({
+      ...createMessagesDTO,
+      user,
+    });
+    this.events.emit('messages.create', messages);
+    return messages;
   }
-  @Get(':roomsId')
-  getMessageFromRooms(
+  @Post('room')
+  async getMessageFromRooms(
     @AuthUser() user: UsersPromise,
-    @Param('roomsId') roomsId: string,
+    @Body() roomMessages: RoomMessages,
+    @Res() res: Response,
   ) {
-    return this.messageServices.getMessages(roomsId);
+    try {
+      const messages = await this.messageServices.getMessages(
+        roomMessages.roomsId,
+      );
+      return res.send(messages).status(HttpStatus.OK);
+    } catch (error) {
+      return error;
+    }
   }
 }

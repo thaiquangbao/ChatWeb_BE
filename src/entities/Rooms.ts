@@ -12,7 +12,7 @@ export class Rooms {
   creator: User;
   @Prop({ type: Array })
   messages: Messages[];
-  @Prop({ type: Messages })
+  @Prop({ type: Object })
   lastMessageSent: Messages;
 }
 export const RoomsSchema = SchemaFactory.createForClass(Rooms);

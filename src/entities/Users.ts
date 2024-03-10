@@ -8,6 +8,10 @@ import { Messages } from './Message';
 export class User {
   @Prop({ type: String, required: true })
   fullName: string;
+  // @Prop({ type: String })
+  // male: string;
+  // @Prop({ type: String })
+  // backGroud: string;
   @Prop({ type: String, required: true })
   phoneNumber: string;
   @Prop({ type: String, required: true })
