@@ -1,7 +1,6 @@
 import {
   Body,
   Controller,
-  Get,
   HttpStatus,
   Inject,
   Post,
@@ -26,6 +25,7 @@ export class MessagesController {
     @AuthUser() user: UsersPromise,
     //@Param('id') id: string,
     @Body() createMessagesDTO: CreateMessagesDTO,
+    @Res() res: Response,
   ) {
     //const params = { user, id, content };
     const messages = await this.messageServices.createMessages({
@@ -33,7 +33,7 @@ export class MessagesController {
       user,
     });
     this.events.emit('messages.create', messages);
-    return messages;
+    return res.send(messages).status(HttpStatus.OK);
   }
   @Post('room')
   async getMessageFromRooms(

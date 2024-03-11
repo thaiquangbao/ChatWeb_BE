@@ -14,6 +14,8 @@ import { Server } from 'socket.io';
 })
 export class MessagingGateway implements OnGatewayConnection {
   handleConnection(client: any, ...args: any[]) {
+    console.log(client.id);
+    client.emit('connected', { status: 'good' });
     //console.log(client);
   }
 
@@ -27,7 +29,11 @@ export class MessagingGateway implements OnGatewayConnection {
   @OnEvent('messages.create')
   handleMessagesCreateEvent(payload: any){
     console.log('Đã vào được chức năng tạo messages');
-    console.log(payload);
     this.server.emit('onMessages', payload);
+  }
+  @OnEvent('rooms.create')
+  handleRoomsCreateEvent(payload: any){
+    console.log('Đã vào được chức năng tạo messages');
+    this.server.emit('onRooms', payload);
   }
 }
