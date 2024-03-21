@@ -38,6 +38,8 @@ export class RoomController {
   }
   @Get()
   async getRooms(@AuthUser() { id }: UsersPromise) {
+    const rooms = this.roomsService.getRooms(id);
+    this.events.emit('rooms.get', rooms);
     return this.roomsService.getRooms(id);
   }
   @Get(':id')

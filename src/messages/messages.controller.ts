@@ -4,6 +4,7 @@ import {
   HttpStatus,
   Inject,
   Post,
+  Req,
   Res,
 } from '@nestjs/common';
 import { Routes, Services } from '../untills/constain';
@@ -11,7 +12,7 @@ import { IMessageService } from './messages';
 import { CreateMessagesDTO, RoomMessages } from './dto/Messages.dto';
 import { AuthUser } from 'src/untills/decorater';
 import { UsersPromise } from 'src/auth/dtos/Users.dto';
-import { Response } from 'express';
+import { Response, Request } from 'express';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 @Controller(Routes.MESSAGES)
 export class MessagesController {
@@ -26,7 +27,9 @@ export class MessagesController {
     //@Param('id') id: string,
     @Body() createMessagesDTO: CreateMessagesDTO,
     @Res() res: Response,
+    @Req() req: Request,
   ) {
+    //const cookie = req.cookies.Session_JS;
     //const params = { user, id, content };
     const messages = await this.messageServices.createMessages({
       ...createMessagesDTO,

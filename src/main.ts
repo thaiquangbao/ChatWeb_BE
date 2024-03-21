@@ -4,9 +4,12 @@ import { ValidationPipe } from '@nestjs/common';
 import * as session from 'express-session';
 import * as passport from 'passport';
 import * as cookieParser from 'cookie-parser';
+import { WebsocketAdapter } from './gateway/gateway.adapter';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const { PORT } = process.env;
+  const adapter = new WebsocketAdapter(app);
+  app.useWebSocketAdapter(adapter);
   app.setGlobalPrefix('api');
   app.useGlobalPipes(new ValidationPipe());
   app.enableCors({ origin: ['http://localhost:3000'], credentials: true });
@@ -18,7 +21,7 @@ async function bootstrap() {
       resave: false,
       saveUninitialized: false,
       cookie: {
-        maxAge: 3600000,
+        maxAge: 86400000,
         path: '/',
       },
     }),

@@ -3,7 +3,7 @@ import { IMessageService } from './messages';
 import { Messages } from 'src/entities/Message';
 import { InjectModel } from '@nestjs/mongoose';
 import mongoose, { Model } from 'mongoose';
-import { CreateMessageParams } from '../untills/types';
+import { CreateMessageParams, CreateMessageResponse } from '../untills/types';
 import { Rooms } from 'src/entities/Rooms';
 
 @Injectable()
@@ -19,7 +19,9 @@ export class MessagesService implements IMessageService {
     });
     return messges;
   }
-  async createMessages(params: CreateMessageParams): Promise<Messages> {
+  async createMessages(
+    params: CreateMessageParams,
+  ): Promise<CreateMessageResponse> {
     const { user, content, roomsID } = params;
     const rooms = await this.roomsModel
       .findOne({ _id: roomsID })
@@ -60,14 +62,15 @@ export class MessagesService implements IMessageService {
       createdAt: new Date(),
     };
     // Cập nhật lại lastMessage vào phòng chat bỏ id messges vào trong đó
-    await this.roomsModel.findOneAndUpdate(
+    const updated = await this.roomsModel.findOneAndUpdate(
       { _id: rooms.id },
       {
         $set: { lastMessageSent: dataLastMessages },
         $push: { messages: dataMessage },
       },
+      { new: true },
     );
-    return messageSave;
-    // return { message: messageSave, rooms: updated };
+    //return messageSave;
+    return { message: messageSave, rooms: updated };
   }
 }
