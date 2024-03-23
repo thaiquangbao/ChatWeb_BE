@@ -1,7 +1,7 @@
 import { UsersPromise } from 'src/auth/dtos/Users.dto';
 import { Messages } from 'src/entities/Message';
 import { Rooms } from 'src/entities/Rooms';
-
+import { Request } from 'express';
 export type CreateUserDetails = {
   fullName: string;
   phoneNumber: string;

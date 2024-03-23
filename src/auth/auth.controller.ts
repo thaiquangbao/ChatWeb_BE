@@ -15,7 +15,7 @@ import { CreateUsers, ValidAccount } from './dtos/Users.dto';
 import { IUserService } from 'src/users/users';
 import { AuthenticatedGuard, LocalAuthGuard } from './untills/Guards';
 import { Response, Request } from 'express';
-import { CreateUserDetails } from 'src/untills/types';
+import { AuthenticatedRequest, CreateUserDetails } from 'src/untills/types';
 @Controller(Routes.AUTH)
 export class AuthController {
   constructor(
@@ -90,5 +90,12 @@ export class AuthController {
     } else {
       res.send(HttpStatus.BAD_GATEWAY);
     }
+  }
+  @Post('logout')
+  @UseGuards(AuthenticatedGuard)
+  logout(@Req() req: AuthenticatedRequest, @Res() res: Response) {
+    req.logout((err: any) => {
+      return err ? res.send(400) : res.send(200);
+    });
   }
 }
