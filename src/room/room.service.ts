@@ -76,7 +76,7 @@ export class RoomService implements IRoomsService {
       if (existed) {
         throw new HttpException(
           'Đã tạo phòng với User này ròi',
-          HttpStatus.NOT_FOUND,
+          HttpStatus.BAD_REQUEST,
         );
       }
       const newRooms = await this.roomsModel.create({

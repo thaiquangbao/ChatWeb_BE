@@ -1,5 +1,10 @@
 import { Messages } from 'src/entities/Message';
-import { CreateMessageParams, CreateMessageResponse } from 'src/untills/types';
+import {
+  CreateMessageParams,
+  CreateMessageResponse,
+  DeleteMessages,
+} from 'src/untills/types';
+import { RoomAfterDeleteMessages } from './dto/Messages.dto';
 
 export interface IMessageService {
   createMessages(
@@ -9,4 +14,6 @@ export interface IMessageService {
   //   createMessageParams: CreateMessageParams,
   // ): Promise<CreateMessageResponse>;
   getMessages(id: string): Promise<Messages[]>;
+  deleteMessages(id: string, informationMess: DeleteMessages);
+  /*  : Promise<RoomAfterDeleteMessages>; */
 }

@@ -57,3 +57,12 @@ export type CreateMessageResponse = {
   message: Messages;
   rooms: Rooms;
 };
+export type findAuth = {
+  email?: string;
+  phoneNumber?: string;
+};
+export type DeleteMessages = {
+  idMessages: string;
+  idLastMessageSent: string;
+  email: string;
+};

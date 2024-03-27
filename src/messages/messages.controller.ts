@@ -1,8 +1,10 @@
 import {
   Body,
   Controller,
+  Delete,
   HttpStatus,
   Inject,
+  Param,
   Post,
   Req,
   Res,
@@ -14,6 +16,7 @@ import { AuthUser } from 'src/untills/decorater';
 import { UsersPromise } from 'src/auth/dtos/Users.dto';
 import { Response, Request } from 'express';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { DeleteMessages } from 'src/untills/types';
 @Controller(Routes.MESSAGES)
 export class MessagesController {
   constructor(
@@ -49,6 +52,29 @@ export class MessagesController {
         roomMessages.roomsId,
       );
       return res.send(messages).status(HttpStatus.OK);
+    } catch (error) {
+      return error;
+    }
+  }
+  @Delete(':id/:idMessages/:idLastMessageSent/:email')
+  async deleteMessages(
+    @Param('id') id: string,
+    @Param('idMessages') idMessages: string,
+    @Param('idLastMessageSent') idLastMessageSent: string,
+    @Param('email') email: string,
+  ) {
+    try {
+      const informationMess: DeleteMessages = {
+        idMessages,
+        idLastMessageSent,
+        email,
+      };
+      const updateMess = await this.messageServices.deleteMessages(
+        id,
+        informationMess,
+      );
+      this.events.emit('messages.deleted', updateMess);
+      return updateMess;
     } catch (error) {
       return error;
     }

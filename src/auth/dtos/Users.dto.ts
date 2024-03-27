@@ -69,3 +69,7 @@ export class UsersPromise {
   dateOfBirth: string;
   avatar: string;
 }
+export class findAuthenticated {
+  email?: string;
+  phoneNumber?: string;
+}

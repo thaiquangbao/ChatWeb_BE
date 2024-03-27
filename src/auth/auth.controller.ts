@@ -11,7 +11,7 @@ import {
 } from '@nestjs/common';
 import { Routes, Services } from 'src/untills/constain';
 import { IAuthService } from './auth';
-import { CreateUsers, ValidAccount } from './dtos/Users.dto';
+import { CreateUsers, findAuthenticated, ValidAccount } from './dtos/Users.dto';
 import { IUserService } from 'src/users/users';
 import { AuthenticatedGuard, LocalAuthGuard } from './untills/Guards';
 import { Response, Request } from 'express';
@@ -90,6 +90,14 @@ export class AuthController {
     } else {
       res.send(HttpStatus.BAD_GATEWAY);
     }
+  }
+  @Post('findAuth')
+  async findAuth(
+    @Body() findAuthenticate: findAuthenticated,
+    @Res() res: Response,
+  ) {
+    const result = await this.authService.findAuthenticate(findAuthenticate);
+    return res.status(200).send(result);
   }
   @Post('logout')
   @UseGuards(AuthenticatedGuard)
