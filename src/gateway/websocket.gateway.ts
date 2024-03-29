@@ -12,7 +12,7 @@ import { Server } from 'socket.io';
 import { IRoomsService } from 'src/room/room';
 import { Services } from 'src/untills/constain';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import * as session from 'express-session';
+import { IMessageService } from 'src/messages/messages';
 @WebSocketGateway({
   cors: {
     origin: ['http://localhost:3000'],
@@ -21,6 +21,8 @@ import * as session from 'express-session';
 })
 export class MessagingGateway implements OnGatewayConnection {
   constructor(
+    @Inject(Services.MESSAGES)
+    private readonly messagesService: IMessageService,
     @Inject(Services.ROOMS)
     private readonly roomsService: IRoomsService,
     private readonly events: EventEmitter2,
@@ -107,7 +109,6 @@ export class MessagingGateway implements OnGatewayConnection {
   }
   @OnEvent('messages.deleted')
   async handleLastMessagesUpdateEvent(payload: any) {
-    console.log(payload.roomsUpdate.lastMessageSent);
     this.server.emit(
       `updateLastMessages${payload.userActions}`,
       await payload.roomsUpdate,
@@ -121,6 +122,36 @@ export class MessagingGateway implements OnGatewayConnection {
     if (payload.userActions === payload.roomsUpdate.creator.email) {
       return this.server.emit(
         `updateLastMessages${payload.roomsUpdate.recipient.email}`,
+        await payload.roomsUpdate,
+      );
+    }
+  }
+  @OnEvent('messages.updated')
+  async handleUpdatedMessagesEvent(payload: any) {
+    const messagesCN = await this.messagesService.getMessages(
+      payload.roomsUpdate._id,
+    );
+    const payLoading = {
+      dataLoading: payload,
+      messagesCN,
+    };
+    this.server.emit(`updatedMessage${payload.roomsUpdate._id}`, payLoading);
+  }
+  @OnEvent('messages.updated')
+  async handleUpdatedEvent(payload: any) {
+    this.server.emit(
+      `updateLastMessagesed${payload.email}`,
+      await payload.roomsUpdate,
+    );
+    if (payload.email === payload.roomsUpdate.recipient.email) {
+      return this.server.emit(
+        `updateLastMessagesed${payload.roomsUpdate.creator.email}`,
+        await payload.roomsUpdate,
+      );
+    }
+    if (payload.email === payload.roomsUpdate.creator.email) {
+      return this.server.emit(
+        `updateLastMessagesed${payload.roomsUpdate.recipient.email}`,
         await payload.roomsUpdate,
       );
     }

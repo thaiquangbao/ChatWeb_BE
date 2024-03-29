@@ -19,6 +19,12 @@ import { Rooms, RoomsSchema } from 'src/entities/Rooms';
       useClass: MessagesService,
     },
   ],
+  exports: [
+    {
+      provide: Services.MESSAGES,
+      useClass: MessagesService,
+    },
+  ],
   controllers: [MessagesController],
 })
 export class MessagesModule {}

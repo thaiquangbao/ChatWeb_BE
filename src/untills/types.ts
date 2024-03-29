@@ -66,3 +66,9 @@ export type DeleteMessages = {
   idLastMessageSent: string;
   email: string;
 };
+export type UpdateMessages = {
+  newMessages: string;
+  idMessages: string;
+  idLastMessageSent: string;
+  email: string;
+};

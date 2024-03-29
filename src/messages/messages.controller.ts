@@ -5,9 +5,12 @@ import {
   HttpStatus,
   Inject,
   Param,
+  Patch,
   Post,
+  Put,
   Req,
   Res,
+  UseGuards,
 } from '@nestjs/common';
 import { Routes, Services } from '../untills/constain';
 import { IMessageService } from './messages';
@@ -16,8 +19,10 @@ import { AuthUser } from 'src/untills/decorater';
 import { UsersPromise } from 'src/auth/dtos/Users.dto';
 import { Response, Request } from 'express';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { DeleteMessages } from 'src/untills/types';
+import { DeleteMessages, UpdateMessages } from 'src/untills/types';
+import { AuthenticatedGuard } from 'src/auth/untills/Guards';
 @Controller(Routes.MESSAGES)
+@UseGuards(AuthenticatedGuard)
 export class MessagesController {
   constructor(
     @Inject(Services.MESSAGES)
@@ -75,6 +80,29 @@ export class MessagesController {
       );
       this.events.emit('messages.deleted', updateMess);
       return updateMess;
+    } catch (error) {
+      return error;
+    }
+  }
+  @Patch(':id/updateMessage')
+  async updateMessages(
+    @Param('id') id: string,
+    @Body() updateMessage: UpdateMessages,
+    @AuthUser() user: UsersPromise,
+  ) {
+    try {
+      const updateMessages = await this.messageServices.updateMessage(
+        user.fullName,
+        id,
+        updateMessage,
+      );
+      this.events.emit('messages.updated', {
+        roomsUpdate: updateMessages,
+        email: user.email,
+        idMessages: updateMessage.idMessages,
+        messagesNew: updateMessage.newMessages,
+      });
+      return updateMessages;
     } catch (error) {
       return error;
     }
