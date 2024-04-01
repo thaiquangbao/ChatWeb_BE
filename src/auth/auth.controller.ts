@@ -74,16 +74,6 @@ export class AuthController {
       res.send(HttpStatus.BAD_GATEWAY);
     }
   }
-  @Get('removeCookie')
-  async removeCookie(@Req() req: Request, @Res() res: Response) {
-    const cookieExist = req.cookies.Session_JS;
-    if (cookieExist) {
-      res.clearCookie('Session_JS');
-      res.send(HttpStatus.OK);
-    } else {
-      res.send(HttpStatus.ACCEPTED);
-    }
-  }
   @Post('statusValid')
   async validCode(@Body() validCode: ValidAccount, @Res() res: Response) {
     try {

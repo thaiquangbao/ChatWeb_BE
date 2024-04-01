@@ -6,8 +6,15 @@ import { User, UsersSchema } from 'src/entities/users';
 import { PassportModule } from '@nestjs/passport';
 import { ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
+import { UsersController } from './users.controller';
+import { Rooms, RoomsSchema } from 'src/entities/Rooms';
+import { Messages, MessagesSchema } from 'src/entities/Message';
 @Module({
   imports: [
+    MongooseModule.forFeature([{ name: Rooms.name, schema: RoomsSchema }]),
+    MongooseModule.forFeature([
+      { name: Messages.name, schema: MessagesSchema },
+    ]),
     MongooseModule.forFeature([{ name: User.name, schema: UsersSchema }]),
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
@@ -34,5 +41,6 @@ import { JwtModule } from '@nestjs/jwt';
       useClass: UsersService,
     },
   ],
+  controllers: [UsersController],
 })
 export class UsersModule {}

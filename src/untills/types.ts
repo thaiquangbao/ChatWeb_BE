@@ -93,3 +93,6 @@ export type UpdateImageAvatar = {
 export type UpdateImageBg = {
   bgUrl: string;
 };
+export type DeleteUser = {
+  email: string;
+};

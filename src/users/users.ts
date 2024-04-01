@@ -4,6 +4,7 @@ import {
   CreateRoomsParams,
   CreateUserDetails,
   FindUserByEmail,
+  ValidateUser,
 } from 'src/untills/types';
 
 export interface IUserService {
@@ -12,4 +13,6 @@ export interface IUserService {
   sendMail(authDTO: CreateUserDetails);
   validVertical(validCode: ValidAccount);
   findUsersByEmail(roomsParams: CreateRoomsParams): Promise<UsersPromise>;
+  takeAccount(account: ValidateUser);
+  deleteAccount(id: string);
 }

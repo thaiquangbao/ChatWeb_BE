@@ -4,6 +4,7 @@ import {
   CreateRoomsParams,
   CreateUserDetails,
   FindUserByEmail,
+  ValidateUser,
 } from 'src/untills/types';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
@@ -16,6 +17,8 @@ import {
 } from 'src/auth/dtos/Users.dto';
 import { MailerService } from '@nestjs-modules/mailer';
 import { JwtService } from '@nestjs/jwt';
+import { Messages } from 'src/entities/Message';
+import { Rooms } from 'src/entities/Rooms';
 
 @Injectable()
 export class UsersService implements IUserService {
@@ -23,13 +26,86 @@ export class UsersService implements IUserService {
     @InjectModel(User.name) private readonly userModel: Model<User>,
     private mailService: MailerService,
     private jwtService: JwtService,
+    @InjectModel(Messages.name) private messagesEntity: Model<Messages>,
+    @InjectModel(Rooms.name) private roomsEntity: Model<Rooms>,
   ) {}
+  async deleteAccount(id: string) {
+    const userExist = await this.userModel.findById(id);
+    if (!userExist) {
+      throw new HttpException('Undefined', HttpStatus.NOT_FOUND);
+    }
+    const deleteUser = await this.userModel.deleteOne({
+      email: userExist.email,
+    });
+    if (!deleteUser) {
+      throw new HttpException(
+        'Xóa phòng không thành công',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+    const roomsUser = await this.roomsEntity.find({
+      $or: [
+        { 'creator.email': userExist.email },
+        { 'recipient.email': userExist.email },
+      ],
+    });
+    const messagesUser = await this.messagesEntity.find({
+      where: { 'author.email': userExist.email },
+    });
+    if (roomsUser) {
+      await this.roomsEntity.deleteMany({ 'recipient.email': userExist.email });
+      // Cập nhật các phòng mà user là creator
+      await this.roomsEntity.deleteMany({ 'creator.email': userExist.email });
+    }
+    if (messagesUser) {
+      await this.messagesEntity.deleteMany({ 'author.email': userExist.email });
+    }
+    if (deleteUser.deletedCount > 0) {
+      return true;
+    } else {
+      return false;
+    }
+  }
   findUsersByEmail(roomsParams: CreateRoomsParams): Promise<UsersPromise> {
     return this.userModel.findOne(roomsParams);
   }
   private generatedCode: string = '';
   findUsers(informationUser: FindUserByEmail): Promise<User> {
     return this.userModel.findOne(informationUser);
+  }
+  async takeAccount(account: ValidateUser) {
+    const existUser = await this.userModel.findOne({ email: account.email });
+    if (!existUser) {
+      throw new HttpException('User không tồn tại', HttpStatus.NOT_FOUND);
+    }
+    this.generatedCode = this.generateRandomString(6);
+    const newPassword = await hashPassword(this.generatedCode);
+    const updatedPassUser = await this.userModel.updateOne(
+      {
+        email: existUser.email,
+      },
+      { passWord: newPassword },
+    );
+    if (!updatedPassUser) {
+      throw new HttpException(
+        'Update password không thành công',
+        HttpStatus.CONFLICT,
+      );
+    }
+    const send = await this.mailService.sendMail({
+      to: account.email,
+      from: 'haisancomnieuphanthiet@gmail.com',
+      subject: 'Welcome to ZEN CHAT',
+      html: `<b>ZEN CHAT: Mật khẩu mới của bạn là: ${this.generatedCode}</b>`,
+      context: {
+        name: '',
+      },
+    });
+    if (send) {
+      return true;
+    } else {
+      return false;
+    }
   }
   private generateRandomString(length: number): string {
     const characters = '0123456789';
