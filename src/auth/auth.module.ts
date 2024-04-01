@@ -10,6 +10,13 @@ import { User, UsersSchema } from '../entities/users';
 import { PassportModule } from '@nestjs/passport';
 import { ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
+import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
+import { CloudinaryProvider } from 'src/cloudinary/cloudinary.provider';
+import { CloudinaryModule } from 'src/cloudinary/cloudinary.module';
+import { MessagesModule } from 'src/messages/messages.module';
+import { RoomModule } from 'src/room/room.module';
+import { Rooms, RoomsSchema } from 'src/entities/Rooms';
+import { Messages, MessagesSchema } from 'src/entities/Message';
 
 @Module({
   imports: [
@@ -27,6 +34,13 @@ import { JwtModule } from '@nestjs/jwt';
         };
       },
     }),
+    MessagesModule,
+    RoomModule,
+    CloudinaryModule,
+    MongooseModule.forFeature([{ name: Rooms.name, schema: RoomsSchema }]),
+    MongooseModule.forFeature([
+      { name: Messages.name, schema: MessagesSchema },
+    ]),
   ],
   controllers: [AuthController],
   providers: [
@@ -36,6 +50,8 @@ import { JwtModule } from '@nestjs/jwt';
       provide: Services.AUTH,
       useClass: AuthService,
     },
+    CloudinaryService,
+    CloudinaryProvider,
   ],
 })
 export class AuthModule {}

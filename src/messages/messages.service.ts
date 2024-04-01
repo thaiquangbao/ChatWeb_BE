@@ -62,6 +62,7 @@ export class MessagesService implements IMessageService {
         'messages.$.author': fullName,
       };
       const newLastMessages = {
+        _id: objectIdRoomId,
         content: newMessages,
         author: {
           email: email,

@@ -17,6 +17,9 @@ import { RoomModule } from './room/room.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { MessagesModule } from './messages/messages.module';
 import { GatewayModule } from './gateway/gateway.module';
+import { CloudinaryModule } from './cloudinary/cloudinary.module';
+import { CloudinaryProvider } from './cloudinary/cloudinary.provider';
+import { CloudinaryService } from './cloudinary/cloudinary.service';
 // PassportModule.register({ defaultStrategy: "jwt" }),
 @Module({
   imports: [
@@ -53,9 +56,15 @@ import { GatewayModule } from './gateway/gateway.module';
     EventEmitterModule.forRoot(),
     MessagesModule,
     GatewayModule,
+    CloudinaryModule,
   ],
   controllers: [],
-  providers: [MailerService, MiddlewareService],
+  providers: [
+    MailerService,
+    MiddlewareService,
+    CloudinaryProvider,
+    CloudinaryService,
+  ],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {

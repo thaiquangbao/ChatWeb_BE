@@ -93,6 +93,8 @@ export class UsersService implements IUserService {
       passWord: password,
       dateOfBirth: validCode.dateOfBirth,
       avatar: validCode.avatar,
+      background: validCode.background,
+      gender: validCode.gender,
     });
     console.log('UserService.createUser');
     return result.save();

@@ -8,10 +8,10 @@ import { Messages } from './Message';
 export class User {
   @Prop({ type: String, required: true })
   fullName: string;
-  // @Prop({ type: String })
-  // male: string;
-  // @Prop({ type: String })
-  // backGroud: string;
+  @Prop({ type: String })
+  gender: string;
+  @Prop({ type: String })
+  background: string;
   @Prop({ type: String, required: true })
   phoneNumber: string;
   @Prop({ type: String, required: true })
@@ -25,5 +25,7 @@ export class User {
   avatar: string;
   @Prop({ type: Array })
   messages: Messages[];
+  @Prop({ type: Array })
+  friends: User[];
 }
 export const UsersSchema = SchemaFactory.createForClass(User);

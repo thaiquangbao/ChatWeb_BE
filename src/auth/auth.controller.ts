@@ -4,18 +4,35 @@ import {
   Get,
   HttpStatus,
   Inject,
+  Param,
+  Patch,
   Post,
+  Put,
   Req,
   Res,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { Routes, Services } from 'src/untills/constain';
 import { IAuthService } from './auth';
-import { CreateUsers, findAuthenticated, ValidAccount } from './dtos/Users.dto';
+import {
+  CreateUsers,
+  findAuthenticated,
+  UpdateUser,
+  UsersPromise,
+  ValidAccount,
+} from './dtos/Users.dto';
 import { IUserService } from 'src/users/users';
 import { AuthenticatedGuard, LocalAuthGuard } from './untills/Guards';
 import { Response, Request } from 'express';
-import { AuthenticatedRequest, CreateUserDetails } from 'src/untills/types';
+import {
+  AuthenticatedRequest,
+  CreateUserDetails,
+  UpdatePassWord,
+} from 'src/untills/types';
+import { AuthUser } from 'src/untills/decorater';
+import { FileInterceptor } from '@nestjs/platform-express';
 @Controller(Routes.AUTH)
 export class AuthController {
   constructor(
@@ -105,5 +122,71 @@ export class AuthController {
     req.logout((err: any) => {
       return err ? res.send(400) : res.send(200);
     });
+  }
+  @Post('updateImageAVT')
+  @UseInterceptors(
+    FileInterceptor('fileAvatar'), // Sử dụng FileInterceptor cho một file
+  )
+  async updateImageAVT(
+    @UploadedFile() fileAvatar: Express.Multer.File, // Sử dụng @UploadedFile() cho một file
+  ) {
+    try {
+      const imageNew = await this.authService.updateImagesUserAVT(fileAvatar);
+      return imageNew;
+    } catch (error) {
+      console.log(error);
+    }
+  }
+  @Post('updateImageBg')
+  @UseGuards(AuthenticatedGuard)
+  @UseInterceptors(
+    FileInterceptor('fileBackground'), // Sử dụng FileInterceptor cho một file
+  )
+  async updateImageBg(
+    @UploadedFile() fileBackground: Express.Multer.File, // Sử dụng @UploadedFile() cho một file
+  ) {
+    try {
+      const imageNew =
+        await this.authService.updateImagesUserBg(fileBackground);
+      return imageNew;
+    } catch (error) {
+      console.log(error);
+    }
+  }
+  @Put('updateUser/:id')
+  @UseGuards(AuthenticatedGuard)
+  async updateUser(
+    @Param('id') id: string,
+    @Body() user: UpdateUser,
+    @AuthUser() userAuth: UsersPromise,
+    @Res() res: Response,
+  ) {
+    try {
+      if (id !== userAuth.id) {
+        return res.status(400).send('Not Your Account');
+      }
+      const updatedUser = await this.authService.updateValidUser(id, user);
+      return res.send(updatedUser).status(200);
+    } catch (error) {
+      console.log(error);
+    }
+  }
+  @Patch('updatedPassword/:id')
+  @UseGuards(AuthenticatedGuard)
+  async updatePassword(
+    @Param('id') id: string,
+    @Body() user: UpdatePassWord,
+    @AuthUser() userAuth: UsersPromise,
+    @Res() res: Response,
+  ) {
+    try {
+      if (id !== userAuth.id) {
+        return res.status(400).send('Not Your Account');
+      }
+      const updatePassword = await this.authService.updatePassWord(id, user);
+      return res.send(updatePassword).status(200);
+    } catch (error) {
+      return res.send(error);
+    }
   }
 }

@@ -9,6 +9,8 @@ export type CreateUserDetails = {
   passWord: string;
   dateOfBirth: string;
   avatar: string;
+  gender: string;
+  background: string;
 };
 export type ValidateUserDetails = {
   email: string;
@@ -71,4 +73,23 @@ export type UpdateMessages = {
   idMessages: string;
   idLastMessageSent: string;
   email: string;
+};
+export type UpdateUserDetails = {
+  fullName: string;
+  dateOfBirth: string;
+  avatar: string;
+  gender: string;
+  background: string;
+  avtUrl?: string;
+  bgUrl?: string;
+};
+export type UpdatePassWord = {
+  passWord: string;
+  oldPassWord: string;
+};
+export type UpdateImageAvatar = {
+  avtUrl: string;
+};
+export type UpdateImageBg = {
+  bgUrl: string;
 };
