@@ -96,3 +96,6 @@ export type UpdateImageBg = {
 export type DeleteUser = {
   email: string;
 };
+export type SendFriendInvitations = {
+  id: string;
+};

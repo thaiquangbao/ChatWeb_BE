@@ -10,7 +10,6 @@ import {
   UpdateMessages,
 } from '../untills/types';
 import { Rooms } from 'src/entities/Rooms';
-import { RoomAfterDeleteMessages } from './dto/Messages.dto';
 import { RoomsPromise } from 'src/room/dto/RoomDTO.dto';
 
 @Injectable()

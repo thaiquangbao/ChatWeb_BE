@@ -124,7 +124,7 @@ export class UsersService implements IUserService {
       phoneNumber: userDetail.phoneNumber,
     });
     if (existingUser) {
-      throw new HttpException('User already exists', HttpStatus.CONFLICT);
+      throw new HttpException('Email nãy đã được sử dụng', HttpStatus.CONFLICT);
     }
     if (existingPhone) {
       throw new HttpException(

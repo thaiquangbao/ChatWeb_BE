@@ -107,7 +107,7 @@ export class AuthService implements IAuthService {
       validUser.avatar &&
       avtUrl
     ) {
-      console.log('rơi vào đây 1');
+      //console.log('rơi vào đây 1');
       // Xóa ảnh cũ trên Cloudinary nếu có
       const parts = validUser.avatar.split('/');
       const desired_part = parts.slice(-2).join('/');
@@ -120,7 +120,7 @@ export class AuthService implements IAuthService {
       validUser.background &&
       bgUrl
     ) {
-      console.log('rơi vào đây 2');
+      // console.log('rơi vào đây 2');
       // Xóa ảnh nền cũ trên Cloudinary nếu có
       const parts = validUser.background.split('/');
       const desired_part = parts.slice(-2).join('/');
@@ -151,7 +151,7 @@ export class AuthService implements IAuthService {
       where: { 'author._id': id },
     });
     if (roomsUser) {
-      console.log('rơi vào đây 3');
+      //console.log('rơi vào đây 3');
       await this.roomsEntity.updateMany(
         { 'recipient._id': id },
         { $set: { recipient: updatedData } },
@@ -163,7 +163,7 @@ export class AuthService implements IAuthService {
       );
     }
     if (messagesUser) {
-      console.log('rơi vào đây 4');
+      // console.log('rơi vào đây 4');
       await this.messagesEntity.updateMany(
         { 'author._id': id },
         { $set: { author: updatedData } },

@@ -14,5 +14,7 @@ export class Rooms {
   messages: Messages[];
   @Prop({ type: Object })
   lastMessageSent: Messages;
+  @Prop({ type: Boolean, default: false })
+  friend: boolean;
 }
 export const RoomsSchema = SchemaFactory.createForClass(Rooms);

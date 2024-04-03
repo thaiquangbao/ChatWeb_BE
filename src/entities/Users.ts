@@ -25,7 +25,13 @@ export class User {
   avatar: string;
   @Prop({ type: Array })
   messages: Messages[];
-  @Prop({ type: Array })
+  @Prop({ type: Array, default: () => [] })
   friends: User[];
+  @Prop({ type: Boolean, default: false })
+  sended: boolean;
+  @Prop({ type: Array, default: () => [] })
+  sendFriend: User[];
+  @Prop({ type: Array, default: () => [] })
+  waitAccept: User[];
 }
 export const UsersSchema = SchemaFactory.createForClass(User);

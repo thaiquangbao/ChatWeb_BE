@@ -7,8 +7,6 @@ import {
   Param,
   Patch,
   Post,
-  Put,
-  Req,
   Res,
   UseGuards,
 } from '@nestjs/common';
@@ -17,7 +15,7 @@ import { IMessageService } from './messages';
 import { CreateMessagesDTO, RoomMessages } from './dto/Messages.dto';
 import { AuthUser } from 'src/untills/decorater';
 import { UsersPromise } from 'src/auth/dtos/Users.dto';
-import { Response, Request } from 'express';
+import { Response } from 'express';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { DeleteMessages, UpdateMessages } from 'src/untills/types';
 import { AuthenticatedGuard } from 'src/auth/untills/Guards';
@@ -35,7 +33,6 @@ export class MessagesController {
     //@Param('id') id: string,
     @Body() createMessagesDTO: CreateMessagesDTO,
     @Res() res: Response,
-    @Req() req: Request,
   ) {
     //const cookie = req.cookies.Session_JS;
     //const params = { user, id, content };

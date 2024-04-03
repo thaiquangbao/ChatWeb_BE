@@ -78,7 +78,7 @@ export class AuthController {
   async validCode(@Body() validCode: ValidAccount, @Res() res: Response) {
     try {
       const result = await this.userService.validVertical(validCode);
-      res.status(HttpStatus.OK).clearCookie('token').send(result); // Gửi phản hồi dựa trên nhu cầu của bạn
+      res.status(HttpStatus.OK).clearCookie('token').send(result);
     } catch (error) {
       res.status(HttpStatus.CONFLICT).send({ message: 'Mã không đúng' });
     }

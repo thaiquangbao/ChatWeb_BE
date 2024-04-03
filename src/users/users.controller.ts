@@ -41,12 +41,30 @@ export class UsersController {
   @Get('removeCookie')
   async removeCookie(@Req() req: Request, @Res() res: Response) {
     const cookieExist = req.cookies.Session_JS;
-    console.log(cookieExist);
     if (cookieExist) {
       res.clearCookie('Session_JS');
       res.send(HttpStatus.OK);
     } else {
       res.send(HttpStatus.ACCEPTED);
+    }
+  }
+  @Get('removeToken')
+  async removeToken(@Req() req: Request, @Res() res: Response) {
+    const cookieExist = req.cookies.token;
+    if (cookieExist) {
+      res.clearCookie('token');
+      res.send(HttpStatus.OK);
+    } else {
+      res.send(HttpStatus.ACCEPTED);
+    }
+  }
+  @Get('getToken')
+  async getToken(@Req() req: Request, @Res() res: Response) {
+    const cookieExist = req.cookies.token;
+    if (!cookieExist) {
+      res.send(HttpStatus.OK);
+    } else {
+      res.send(HttpStatus.BAD_GATEWAY);
     }
   }
 }
