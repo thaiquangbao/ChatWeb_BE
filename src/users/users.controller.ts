@@ -61,7 +61,7 @@ export class UsersController {
   @Get('getToken')
   async getToken(@Req() req: Request, @Res() res: Response) {
     const cookieExist = req.cookies.token;
-    if (!cookieExist) {
+    if (cookieExist) {
       res.send(HttpStatus.OK);
     } else {
       res.send(HttpStatus.BAD_GATEWAY);

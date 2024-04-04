@@ -81,6 +81,7 @@ export class UsersPromise {
   avatar: string;
   background: string;
   gender: string;
+  sended: boolean;
 }
 export class findAuthenticated {
   email?: string;

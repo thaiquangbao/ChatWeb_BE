@@ -5,11 +5,12 @@ import { Services } from 'src/untills/constain';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Rooms, RoomsSchema } from 'src/entities/Rooms';
 import { User, UsersSchema } from 'src/entities/users';
-
+import { RoomModule } from 'src/room/room.module';
 @Module({
   imports: [
     MongooseModule.forFeature([{ name: Rooms.name, schema: RoomsSchema }]),
     MongooseModule.forFeature([{ name: User.name, schema: UsersSchema }]),
+    RoomModule,
   ],
   controllers: [FriendsController],
   providers: [

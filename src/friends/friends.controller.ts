@@ -1,4 +1,5 @@
 import {
+  Body,
   Controller,
   Inject,
   Param,
@@ -13,7 +14,9 @@ import { AuthenticatedGuard } from 'src/auth/untills/Guards';
 import { AuthUser } from 'src/untills/decorater';
 import { UsersPromise } from 'src/auth/dtos/Users.dto';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { FindRooms } from 'src/untills/types';
 @Controller(Routes.FRIENDS)
+@UseGuards(AuthenticatedGuard)
 export class FriendsController {
   constructor(
     @Inject(Services.FRIENDS) private readonly friendsService: IFriendsService,
@@ -42,10 +45,15 @@ export class FriendsController {
   async acceptFriends(
     @Param() id: string,
     @AuthUser() userAuth: UsersPromise,
+    @Body() rooms: FindRooms,
     @Res() res: Response,
   ) {
     try {
-      const accepted = await this.friendsService.acceptFriends(id, userAuth.id);
+      const accepted = await this.friendsService.acceptFriends(
+        id,
+        userAuth.id,
+        rooms.idRooms,
+      );
       this.events.emit('send friend', accepted);
       return res.status(200).send(accepted);
     } catch (error) {

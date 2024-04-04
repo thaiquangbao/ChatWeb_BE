@@ -99,3 +99,6 @@ export type DeleteUser = {
 export type SendFriendInvitations = {
   id: string;
 };
+export type FindRooms = {
+  idRooms: string;
+};

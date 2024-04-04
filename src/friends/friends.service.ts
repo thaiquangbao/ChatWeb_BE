@@ -1,16 +1,25 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { IFriendsService } from './friends';
 import { InjectModel } from '@nestjs/mongoose';
 import { User } from 'src/entities/users';
 import mongoose, { Model } from 'mongoose';
 import { SendFriendDto } from './dto/friendDto';
+import { Rooms } from 'src/entities/Rooms';
+import { Services } from 'src/untills/constain';
+import { IRoomsService } from 'src/room/room';
 
 @Injectable()
 export class FriendsService implements IFriendsService {
   constructor(
     @InjectModel(User.name) private readonly userModel: Model<User>,
+    @InjectModel(Rooms.name) private readonly roomsModel: Model<Rooms>,
+    @Inject(Services.ROOMS) private readonly roomsService: IRoomsService,
   ) {}
-  async acceptFriends(idSender: string, myId: string): Promise<SendFriendDto> {
+  async acceptFriends(
+    idSender: string,
+    myId: string,
+    idRooms: string,
+  ): Promise<SendFriendDto> {
     const objectIdRoomId1 = new mongoose.Types.ObjectId(myId);
     const objectIdRoomId2 = new mongoose.Types.ObjectId(idSender);
     const userAccept = await this.userModel.findById(objectIdRoomId1);
@@ -107,6 +116,15 @@ export class FriendsService implements IFriendsService {
       },
       { new: true },
     );
+    const objectIdRoomId3 = new mongoose.Types.ObjectId(idRooms);
+    // console.log(objectIdRoomId3);
+    const updateRoom = await this.roomsModel.findOneAndUpdate(
+      {
+        _id: objectIdRoomId3,
+      },
+      { 'creator.sended': true, 'recipient.sended': true, friend: true },
+    );
+    console.log(updateRoom);
     return { userSend: pushFriendsSender, userAccept: pushFriendsWaiter };
   }
   async sendFriendInvitations(

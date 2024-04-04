@@ -79,6 +79,7 @@ export class RoomService implements IRoomsService {
           HttpStatus.BAD_REQUEST,
         );
       }
+      user.sended = true;
       const newRooms = await this.roomsModel.create({
         recipient: dataRecipient,
         creator: user,
