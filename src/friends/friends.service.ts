@@ -3,7 +3,11 @@ import { IFriendsService } from './friends';
 import { InjectModel } from '@nestjs/mongoose';
 import { User } from 'src/entities/users';
 import mongoose, { Model } from 'mongoose';
-import { SendFriendDto } from './dto/friendDto';
+import {
+  AcceptFriendDto,
+  DeleteFriendDto,
+  SendFriendDto,
+} from './dto/friendDto';
 import { Rooms } from 'src/entities/Rooms';
 import { Services } from 'src/untills/constain';
 import { IRoomsService } from 'src/room/room';
@@ -15,11 +19,70 @@ export class FriendsService implements IFriendsService {
     @InjectModel(Rooms.name) private readonly roomsModel: Model<Rooms>,
     @Inject(Services.ROOMS) private readonly roomsService: IRoomsService,
   ) {}
+  async unfriends(idSender: string, myId: string): Promise<DeleteFriendDto> {
+    const objectIdRoomId1 = new mongoose.Types.ObjectId(myId);
+    const objectIdRoomId2 = new mongoose.Types.ObjectId(idSender);
+    const userAccept = await this.userModel.findById(objectIdRoomId1);
+    const userCL = await this.userModel.findById(objectIdRoomId2);
+    if (!userAccept) {
+      throw new HttpException('User not exist', HttpStatus.NOT_FOUND);
+    }
+    if (!userCL) {
+      throw new HttpException('UserCL not exist', HttpStatus.NOT_FOUND);
+    }
+    console.log(objectIdRoomId1);
+    console.log(objectIdRoomId2);
+    const findFriendsExist = await this.userModel.find({
+      _id: userCL._id,
+      friends: {
+        $elemMatch: { _id: userAccept._id },
+      },
+    });
+    const findFriendsExistRecieve = await this.userModel.find({
+      _id: userAccept._id,
+      friends: {
+        $elemMatch: { _id: userCL._id },
+      },
+    });
+    console.log(findFriendsExist);
+    console.log(findFriendsExistRecieve);
+    if (findFriendsExist.length <= 0 || findFriendsExistRecieve.length <= 0) {
+      throw new HttpException(
+        '2 người không là bạn của nhau',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+    const idSenderPull = {
+      _id: objectIdRoomId2,
+    };
+    const idWaitPull = {
+      _id: objectIdRoomId1,
+    };
+    const pullFriendsAction = await this.userModel.findOneAndUpdate(
+      { _id: objectIdRoomId1 },
+      {
+        $pull: { friends: idSenderPull },
+      },
+      { new: true },
+    );
+    const pushFriendsWaiter = await this.userModel.findOneAndUpdate(
+      { _id: objectIdRoomId2 },
+      {
+        $pull: { friends: idWaitPull },
+      },
+      { new: true },
+    );
+    return {
+      emailUserActions: userAccept.email,
+      userActions: pullFriendsAction,
+      userAccept: pushFriendsWaiter,
+    };
+  }
   async acceptFriends(
     idSender: string,
     myId: string,
     idRooms: string,
-  ): Promise<SendFriendDto> {
+  ): Promise<AcceptFriendDto> {
     const objectIdRoomId1 = new mongoose.Types.ObjectId(myId);
     const objectIdRoomId2 = new mongoose.Types.ObjectId(idSender);
     const userAccept = await this.userModel.findById(objectIdRoomId1);
@@ -118,14 +181,19 @@ export class FriendsService implements IFriendsService {
     );
     const objectIdRoomId3 = new mongoose.Types.ObjectId(idRooms);
     // console.log(objectIdRoomId3);
-    const updateRoom = await this.roomsModel.findOneAndUpdate(
+    const updateRoomFriend = await this.roomsModel.findOneAndUpdate(
       {
         _id: objectIdRoomId3,
       },
       { 'creator.sended': true, 'recipient.sended': true, friend: true },
+      { new: true },
     );
-    console.log(updateRoom);
-    return { userSend: pushFriendsSender, userAccept: pushFriendsWaiter };
+    return {
+      emailUserActions: userAccept.email,
+      userSend: pushFriendsSender,
+      userAccept: pushFriendsWaiter,
+      roomsUpdateMessage: updateRoomFriend,
+    };
   }
   async sendFriendInvitations(
     id: string,

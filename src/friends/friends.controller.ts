@@ -1,6 +1,8 @@
 import {
   Body,
   Controller,
+  HttpException,
+  HttpStatus,
   Inject,
   Param,
   Post,
@@ -14,7 +16,8 @@ import { AuthenticatedGuard } from 'src/auth/untills/Guards';
 import { AuthUser } from 'src/untills/decorater';
 import { UsersPromise } from 'src/auth/dtos/Users.dto';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { FindRooms } from 'src/untills/types';
+import { FindRooms, SendFriendInvitations } from 'src/untills/types';
+import { IdWantMakeFriend } from './dto/friendDto';
 @Controller(Routes.FRIENDS)
 @UseGuards(AuthenticatedGuard)
 export class FriendsController {
@@ -22,16 +25,15 @@ export class FriendsController {
     @Inject(Services.FRIENDS) private readonly friendsService: IFriendsService,
     private readonly events: EventEmitter2,
   ) {}
-  @Post(':id')
-  @UseGuards(AuthenticatedGuard)
+  @Post()
   async sendFriends(
-    @Param() id: string,
+    @Body() friend: IdWantMakeFriend,
     @AuthUser() userAuth: UsersPromise,
     @Res() res: Response,
   ) {
     try {
       const sended = await this.friendsService.sendFriendInvitations(
-        id,
+        friend.id,
         userAuth.id,
       );
       this.events.emit('send friend', sended);
@@ -54,10 +56,29 @@ export class FriendsController {
         userAuth.id,
         rooms.idRooms,
       );
-      this.events.emit('send friend', accepted);
+      this.events.emit('accept.friends', accepted);
       return res.status(200).send(accepted);
     } catch (error) {
       return res.status(400).send(error);
+    }
+  }
+  @Post('unfriends/:id')
+  @UseGuards(AuthenticatedGuard)
+  async unfriends(
+    @Param() id: string,
+    @Body() user: SendFriendInvitations,
+    @AuthUser() userAuth: UsersPromise,
+    @Res() res: Response,
+  ) {
+    try {
+      const deleteFriends = await this.friendsService.unfriends(
+        id,
+        userAuth.id,
+      );
+      this.events.emit('unfriends.friends', deleteFriends);
+      return res.send(deleteFriends).status(200);
+    } catch (error) {
+      return res.send(error);
     }
   }
 }

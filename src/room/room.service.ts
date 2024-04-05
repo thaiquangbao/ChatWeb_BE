@@ -5,7 +5,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Rooms } from '../entities/Rooms';
 import { Model } from 'mongoose';
 import { UsersPromise } from '../auth/dtos/Users.dto';
-import { CreateRoomsParams } from '../untills/types';
+import { CreateRoomsParams, FindRooms } from '../untills/types';
 import { IUserService } from '../users/users';
 import { Services } from '../untills/constain';
 import { User } from '../entities/users';
@@ -20,6 +20,14 @@ export class RoomService implements IRoomsService {
     @InjectModel(User.name) private usersModel: Model<User>,
     @InjectModel(Messages.name) private messagesModel: Model<Messages>,
   ) {}
+  async deleteRooms(roomsId: string) {
+    const findRooms = await this.roomsModel.findById(roomsId);
+    if (!findRooms) {
+      throw new HttpException('Rooms not exist', HttpStatus.NOT_FOUND);
+    }
+    const deleteRooms = await this.roomsModel.findOneAndDelete(findRooms._id);
+    return deleteRooms;
+  }
   async findById(id: string): Promise<Rooms> {
     const rooms = await this.roomsModel.findOne({ _id: id });
     return rooms;

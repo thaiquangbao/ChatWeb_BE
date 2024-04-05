@@ -1,4 +1,8 @@
-import { SendFriendDto } from './dto/friendDto';
+import {
+  AcceptFriendDto,
+  DeleteFriendDto,
+  SendFriendDto,
+} from './dto/friendDto';
 
 export interface IFriendsService {
   sendFriendInvitations(id: string, myId: string): Promise<SendFriendDto>;
@@ -6,5 +10,6 @@ export interface IFriendsService {
     idSender: string,
     myId: string,
     idRooms: string,
-  ): Promise<SendFriendDto>;
+  ): Promise<AcceptFriendDto>;
+  unfriends(idSender: string, myId: string): Promise<DeleteFriendDto>;
 }

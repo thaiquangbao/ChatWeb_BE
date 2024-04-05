@@ -156,4 +156,31 @@ export class MessagingGateway implements OnGatewayConnection {
       );
     }
   }
+  @OnEvent('accept.friends')
+  async handleAcceptFriend(payload: any) {
+    const idRooms = payload.roomsUpdateMessage._id;
+    const idP = idRooms.toString();
+    this.server.emit(`acceptFriends${idP}`, await payload.roomsUpdateMessage);
+  }
+  @OnEvent('accept.friends')
+  async handleSeeAddFriend(payload: any) {
+    this.server.emit(
+      `updateSendedFriend${payload.emailUserActions}`,
+      await payload.roomsUpdateMessage,
+    );
+    if (
+      payload.emailUserActions === payload.roomsUpdateMessage.recipient.email
+    ) {
+      return this.server.emit(
+        `updateSendedFriend${payload.roomsUpdateMessage.creator.email}`,
+        await payload.roomsUpdateMessage,
+      );
+    }
+    if (payload.emailUserActions === payload.roomsUpdateMessage.creator.email) {
+      return this.server.emit(
+        `updateSendedFriend${payload.roomsUpdateMessage.recipient.email}`,
+        await payload.roomsUpdateMessage,
+      );
+    }
+  }
 }

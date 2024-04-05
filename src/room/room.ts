@@ -12,6 +12,7 @@ export interface IRoomsService {
   findById(id: string): Promise<Rooms | undefined>;
   // hasAccess(params: AccessParams): Promise<boolean>;
   isCreated(userId: string, recipientId: string): Promise<Rooms | undefined>;
+  deleteRooms(roomsId: string);
   // save(rooms: RoomsPromise): Promise<RoomsPromise>;
   // getMessages(params: GetConversationMessagesParams): Promise<RoomsPromise>;
   //update(params: UpdateConversationParams);
