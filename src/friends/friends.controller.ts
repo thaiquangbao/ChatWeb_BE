@@ -66,7 +66,7 @@ export class FriendsController {
   @UseGuards(AuthenticatedGuard)
   async unfriends(
     @Param() id: string,
-    @Body() user: SendFriendInvitations,
+    @Body() rooms: SendFriendInvitations,
     @AuthUser() userAuth: UsersPromise,
     @Res() res: Response,
   ) {
@@ -74,6 +74,7 @@ export class FriendsController {
       const deleteFriends = await this.friendsService.unfriends(
         id,
         userAuth.id,
+        rooms.id,
       );
       this.events.emit('unfriends.friends', deleteFriends);
       return res.send(deleteFriends).status(200);

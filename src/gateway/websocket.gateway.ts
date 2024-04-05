@@ -183,4 +183,33 @@ export class MessagingGateway implements OnGatewayConnection {
       );
     }
   }
+  @OnEvent('rooms.delete')
+  async handleDeleteRooms(payload: any) {
+    const idRooms = payload._id;
+    const idP = idRooms.toString();
+    this.server.emit(`deleteRooms${idP}`, await payload);
+  }
+  @OnEvent('unfriends.friends')
+  async handleDeleteUnfriendsRooms(payload: any) {
+    const customer = {
+      emailUserActions: payload.emailUserActions,
+      userActions: payload.userActions,
+      userAccept: payload.userAccept,
+      roomsUpdate: payload.roomsUpdate,
+      reload: false,
+    };
+    this.server.emit(`unfriends${payload.emailUserActions}`, customer);
+    if (payload.emailUserActions === payload.userActions.email) {
+      return this.server.emit(
+        `unfriends${payload.userAccept.email}`,
+        await payload,
+      );
+    }
+    if (payload.emailUserActions === payload.userAccept.email) {
+      return this.server.emit(
+        `unfriends${payload.userActions.email}`,
+        await payload,
+      );
+    }
+  }
 }

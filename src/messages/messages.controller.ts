@@ -34,14 +34,18 @@ export class MessagesController {
     @Body() createMessagesDTO: CreateMessagesDTO,
     @Res() res: Response,
   ) {
+    try {
+      const messages = await this.messageServices.createMessages({
+        ...createMessagesDTO,
+        user,
+      });
+      this.events.emit('messages.create', messages);
+      return res.send(messages).status(HttpStatus.OK);
+    } catch (error) {
+      return res.send(error);
+    }
     //const cookie = req.cookies.Session_JS;
     //const params = { user, id, content };
-    const messages = await this.messageServices.createMessages({
-      ...createMessagesDTO,
-      user,
-    });
-    this.events.emit('messages.create', messages);
-    return res.send(messages).status(HttpStatus.OK);
   }
   @Post('room')
   async getMessageFromRooms(

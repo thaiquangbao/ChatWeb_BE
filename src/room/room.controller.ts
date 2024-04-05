@@ -67,6 +67,7 @@ export class RoomController {
         );
       }
       const deleteRooms = await this.roomsService.deleteRooms(idRooms);
+      this.events.emit('rooms.delete', deleteRooms);
       return res.send(deleteRooms).status(200);
     } catch (error) {
       return res.send(error);

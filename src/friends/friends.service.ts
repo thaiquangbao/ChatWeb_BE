@@ -19,7 +19,11 @@ export class FriendsService implements IFriendsService {
     @InjectModel(Rooms.name) private readonly roomsModel: Model<Rooms>,
     @Inject(Services.ROOMS) private readonly roomsService: IRoomsService,
   ) {}
-  async unfriends(idSender: string, myId: string): Promise<DeleteFriendDto> {
+  async unfriends(
+    idSender: string,
+    myId: string,
+    idRooms: string,
+  ): Promise<DeleteFriendDto> {
     const objectIdRoomId1 = new mongoose.Types.ObjectId(myId);
     const objectIdRoomId2 = new mongoose.Types.ObjectId(idSender);
     const userAccept = await this.userModel.findById(objectIdRoomId1);
@@ -30,8 +34,6 @@ export class FriendsService implements IFriendsService {
     if (!userCL) {
       throw new HttpException('UserCL not exist', HttpStatus.NOT_FOUND);
     }
-    console.log(objectIdRoomId1);
-    console.log(objectIdRoomId2);
     const findFriendsExist = await this.userModel.find({
       _id: userCL._id,
       friends: {
@@ -44,8 +46,6 @@ export class FriendsService implements IFriendsService {
         $elemMatch: { _id: userCL._id },
       },
     });
-    console.log(findFriendsExist);
-    console.log(findFriendsExistRecieve);
     if (findFriendsExist.length <= 0 || findFriendsExistRecieve.length <= 0) {
       throw new HttpException(
         '2 người không là bạn của nhau',
@@ -76,6 +76,8 @@ export class FriendsService implements IFriendsService {
       emailUserActions: userAccept.email,
       userActions: pullFriendsAction,
       userAccept: pushFriendsWaiter,
+      roomsUpdate: idRooms,
+      reload: true,
     };
   }
   async acceptFriends(

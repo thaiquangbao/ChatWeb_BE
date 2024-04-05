@@ -18,4 +18,6 @@ export class DeleteFriendDto {
   emailUserActions: string;
   userActions: User;
   userAccept: User;
+  roomsUpdate: string;
+  reload: boolean;
 }

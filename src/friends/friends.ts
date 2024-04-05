@@ -11,5 +11,9 @@ export interface IFriendsService {
     myId: string,
     idRooms: string,
   ): Promise<AcceptFriendDto>;
-  unfriends(idSender: string, myId: string): Promise<DeleteFriendDto>;
+  unfriends(
+    idSender: string,
+    myId: string,
+    idRooms: string,
+  ): Promise<DeleteFriendDto>;
 }
