@@ -36,7 +36,7 @@ export class FriendsController {
         friend.id,
         userAuth.id,
       );
-      this.events.emit('send friend', sended);
+      this.events.emit('send.friends', sended);
       return res.status(200).send(sended);
     } catch (error) {
       return res.status(400).send(error);

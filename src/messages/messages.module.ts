@@ -5,6 +5,9 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { Messages, MessagesSchema } from 'src/entities/Message';
 import { Services } from '../untills/constain';
 import { Rooms, RoomsSchema } from 'src/entities/Rooms';
+import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
+import { CloudinaryProvider } from 'src/cloudinary/cloudinary.provider';
+import { CloudinaryModule } from 'src/cloudinary/cloudinary.module';
 
 @Module({
   imports: [
@@ -12,12 +15,15 @@ import { Rooms, RoomsSchema } from 'src/entities/Rooms';
     MongooseModule.forFeature([
       { name: Messages.name, schema: MessagesSchema },
     ]),
+    CloudinaryModule,
   ],
   providers: [
     {
       provide: Services.MESSAGES,
       useClass: MessagesService,
     },
+    CloudinaryService,
+    CloudinaryProvider,
   ],
   exports: [
     {

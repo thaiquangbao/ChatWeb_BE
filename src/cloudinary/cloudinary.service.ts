@@ -18,6 +18,54 @@ export class CloudinaryService {
         .end(fileBuffer);
     });
   }
+  uploadFile(fileBuffer: any): Promise<CloudinaryResponse> {
+    const extension = fileBuffer.originalname.substring(
+      fileBuffer.originalname.lastIndexOf('.'),
+    );
+    if (
+      extension === '.mp4' ||
+      extension === '.pdf' ||
+      extension === '.jpg' ||
+      extension === '.png' ||
+      extension === '.jpeg'
+    ) {
+      return new Promise<CloudinaryResponse>((resolve, reject) => {
+        cloudinary.uploader
+          .upload_stream(
+            {
+              resource_type: 'auto',
+              folder: 'Zen_Chat',
+              type: 'upload',
+            },
+            (error, result) => {
+              if (error) {
+                return reject(error);
+              }
+              resolve(result);
+            },
+          )
+          .end(fileBuffer.buffer);
+      });
+    }
+    return new Promise<CloudinaryResponse>((resolve, reject) => {
+      cloudinary.uploader
+        .upload_stream(
+          {
+            resource_type: 'auto',
+            folder: 'Zen_Chat',
+            type: 'upload',
+            public_id: `${fileBuffer.originalname}`,
+          },
+          (error, result) => {
+            if (error) {
+              return reject(error);
+            }
+            resolve(result);
+          },
+        )
+        .end(fileBuffer.buffer);
+    });
+  }
   deleteImage(publicId: string): Promise<CloudinaryResponse> {
     return new Promise<CloudinaryResponse>((resolve, reject) => {
       cloudinary.uploader.destroy(publicId, (error, result) => {

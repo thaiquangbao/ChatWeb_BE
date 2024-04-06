@@ -5,6 +5,7 @@ import * as session from 'express-session';
 import * as passport from 'passport';
 import * as cookieParser from 'cookie-parser';
 import { WebsocketAdapter } from './gateway/gateway.adapter';
+
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const { PORT } = process.env;

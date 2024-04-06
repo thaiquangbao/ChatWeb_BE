@@ -8,7 +8,9 @@ import {
   Patch,
   Post,
   Res,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { Routes, Services } from '../untills/constain';
 import { IMessageService } from './messages';
@@ -19,6 +21,8 @@ import { Response } from 'express';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { DeleteMessages, UpdateMessages } from 'src/untills/types';
 import { AuthenticatedGuard } from 'src/auth/untills/Guards';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
 @Controller(Routes.MESSAGES)
 @UseGuards(AuthenticatedGuard)
 export class MessagesController {
@@ -26,6 +30,7 @@ export class MessagesController {
     @Inject(Services.MESSAGES)
     private readonly messageServices: IMessageService,
     private readonly events: EventEmitter2,
+    private readonly cloudinaryServices: CloudinaryService,
   ) {}
   @Post()
   async createMessage(
@@ -46,6 +51,22 @@ export class MessagesController {
     }
     //const cookie = req.cookies.Session_JS;
     //const params = { user, id, content };
+  }
+  @Post('updateFile')
+  @UseInterceptors(
+    FileInterceptor('file'), // Sử dụng FileInterceptor cho một file
+  )
+  async updateImageAVT(
+    @AuthUser() user: UsersPromise,
+    @UploadedFile() file: Express.Multer.File, // Sử dụng @UploadedFile() cho một file
+    @Res() res: Response,
+  ) {
+    try {
+      const imageNew = await this.cloudinaryServices.uploadFile(file);
+      res.send(imageNew.url);
+    } catch (error) {
+      res.send(error);
+    }
   }
   @Post('room')
   async getMessageFromRooms(

@@ -212,4 +212,20 @@ export class MessagingGateway implements OnGatewayConnection {
       );
     }
   }
+  // @OnEvent('send.friends')
+  // async handleSendFriendRooms(payload: any) {
+  //   this.server.emit(`unfriends${payload.emailUserActions}`, customer);
+  //   if (payload.emailUserActions === payload.userActions.email) {
+  //     return this.server.emit(
+  //       `unfriends${payload.userAccept.email}`,
+  //       await payload,
+  //     );
+  //   }
+  //   if (payload.emailUserActions === payload.userAccept.email) {
+  //     return this.server.emit(
+  //       `unfriends${payload.userActions.email}`,
+  //       await payload,
+  //     );
+  //   }
+  // }
 }
