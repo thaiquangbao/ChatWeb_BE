@@ -12,5 +12,7 @@ export class Messages {
   author: User;
   @Prop({ type: Object })
   rooms: Rooms;
+  @Prop({ type: String, default: '' })
+  emoji: string;
 }
 export const MessagesSchema = SchemaFactory.createForClass(Messages);

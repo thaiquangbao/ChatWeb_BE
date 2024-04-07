@@ -1,10 +1,9 @@
 import {
   Body,
   Controller,
-  HttpException,
-  HttpStatus,
   Inject,
   Param,
+  Patch,
   Post,
   Res,
   UseGuards,
@@ -17,7 +16,7 @@ import { AuthUser } from 'src/untills/decorater';
 import { UsersPromise } from 'src/auth/dtos/Users.dto';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { FindRooms, SendFriendInvitations } from 'src/untills/types';
-import { IdWantMakeFriend } from './dto/friendDto';
+import { IdWantMakeFriend, IdWantUndo } from './dto/friendDto';
 @Controller(Routes.FRIENDS)
 @UseGuards(AuthenticatedGuard)
 export class FriendsController {
@@ -78,6 +77,25 @@ export class FriendsController {
       );
       this.events.emit('unfriends.friends', deleteFriends);
       return res.send(deleteFriends).status(200);
+    } catch (error) {
+      return res.send(error);
+    }
+  }
+  @Post('undo')
+  @UseGuards(AuthenticatedGuard)
+  async undo(
+    @Body() id: IdWantUndo,
+    @AuthUser() userAuth: UsersPromise,
+    @Res() res: Response,
+  ) {
+    try {
+      const undoFriends = await this.friendsService.undoFriends(
+        id.id,
+        userAuth.id,
+        id.idRooms,
+      );
+      this.events.emit('undo.friends', undoFriends);
+      return res.send(undoFriends).status(200);
     } catch (error) {
       return res.send(error);
     }

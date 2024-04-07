@@ -74,6 +74,12 @@ export type UpdateMessages = {
   idLastMessageSent: string;
   email: string;
 };
+export type UpdateEmoji = {
+  newEmoji: string;
+  idMessages: string;
+  idLastMessageSent: string;
+  email: string;
+};
 export type UpdateUserDetails = {
   fullName: string;
   dateOfBirth: string;

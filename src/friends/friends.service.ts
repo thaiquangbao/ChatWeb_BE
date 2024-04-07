@@ -19,6 +19,72 @@ export class FriendsService implements IFriendsService {
     @InjectModel(Rooms.name) private readonly roomsModel: Model<Rooms>,
     @Inject(Services.ROOMS) private readonly roomsService: IRoomsService,
   ) {}
+  async undoFriends(
+    idNotAction: string,
+    myId: string,
+    idRooms: string,
+  ): Promise<DeleteFriendDto> {
+    const objectIdRoomId1 = new mongoose.Types.ObjectId(myId);
+    const objectIdRoomId2 = new mongoose.Types.ObjectId(idNotAction);
+    const userAction = await this.userModel.findById(objectIdRoomId1);
+    const userNAction = await this.userModel.findById(objectIdRoomId2);
+    if (!userAction) {
+      throw new HttpException('User not exist', HttpStatus.NOT_FOUND);
+    }
+    if (!userNAction) {
+      throw new HttpException('userNAction not exist', HttpStatus.NOT_FOUND);
+    }
+    const existWait = await this.userModel
+      .find({
+        _id: userNAction._id,
+        waitAccept: { $elemMatch: { _id: userAction._id } },
+      })
+      .exec();
+    const existSender = await this.userModel
+      .find({
+        _id: userAction._id,
+        sendFriend: { $elemMatch: { _id: userNAction._id } },
+      })
+      .exec();
+    if (existWait.length <= 0) {
+      throw new HttpException(
+        'Không có lời mời kết bạn nào từ người này',
+        HttpStatus.NOT_FOUND,
+      );
+    }
+    if (existSender.length <= 0) {
+      throw new HttpException(
+        'Bạn không gửi lời mời kết bạn với người này',
+        HttpStatus.NOT_FOUND,
+      );
+    }
+    const idSenderPull = {
+      _id: objectIdRoomId1,
+    };
+    const idWaitPull = {
+      _id: objectIdRoomId2,
+    };
+    const pullFriendsWaiter = await this.userModel.findOneAndUpdate(
+      { _id: objectIdRoomId1 },
+      {
+        $pull: { sendFriend: idWaitPull },
+      },
+      { new: true },
+    );
+    const pullFriendsSender = await this.userModel.findOneAndUpdate(
+      { _id: objectIdRoomId2 },
+      {
+        $pull: { waitAccept: idSenderPull },
+      },
+      { new: true },
+    );
+    return {
+      emailUserActions: userAction.email,
+      userActions: pullFriendsWaiter,
+      userAccept: pullFriendsSender,
+      roomsUpdate: idRooms,
+    };
+  }
   async unfriends(
     idSender: string,
     myId: string,
@@ -294,6 +360,6 @@ export class FriendsService implements IFriendsService {
       { $push: { waitAccept: pushSendAccept } },
       { new: true },
     );
-    return { userSend: sender, userAccept: waiter };
+    return { userActions: userSend, userSend: sender, userAccept: waiter };
   }
 }

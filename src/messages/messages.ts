@@ -3,8 +3,10 @@ import {
   CreateMessageParams,
   CreateMessageResponse,
   DeleteMessages,
+  UpdateEmoji,
   UpdateMessages,
 } from 'src/untills/types';
+import { MessagesRoomsUpdate } from './dto/Messages.dto';
 
 export interface IMessageService {
   createMessages(
@@ -17,4 +19,8 @@ export interface IMessageService {
     id: string,
     informationUpdateMessage: UpdateMessages,
   );
+  iconOnMessages(
+    id: string,
+    updateEmoji: UpdateEmoji,
+  ): Promise<MessagesRoomsUpdate>;
 }

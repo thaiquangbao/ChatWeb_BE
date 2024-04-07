@@ -1,6 +1,7 @@
 import { IsNotEmpty, IsString } from 'class-validator';
 import { UsersPromise } from '../../auth/dtos/Users.dto';
 import { Rooms } from 'src/entities/Rooms';
+import { Messages } from 'src/entities/Message';
 
 export class MessagesDTO {
   content: string;
@@ -20,4 +21,13 @@ export class RoomMessages {
 export class RoomAfterDeleteMessages {
   rooms: Rooms;
   isSuccess: boolean;
+}
+export class MessagesUpdate {
+  id: string;
+  messages: Messages;
+}
+export class MessagesRoomsUpdate {
+  idMessages: string;
+  messagesUpdate: Messages;
+  roomsUpdate: Rooms;
 }

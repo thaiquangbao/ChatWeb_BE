@@ -2,6 +2,7 @@ import { Rooms } from 'src/entities/Rooms';
 import { User } from 'src/entities/users';
 
 export class SendFriendDto {
+  userActions: User;
   userSend: User;
   userAccept: User;
 }
@@ -18,6 +19,10 @@ export class DeleteFriendDto {
   emailUserActions: string;
   userActions: User;
   userAccept: User;
-  roomsUpdate: string;
-  reload: boolean;
+  roomsUpdate?: string;
+  reload?: boolean;
+}
+export class IdWantUndo {
+  id: string;
+  idRooms: string;
 }

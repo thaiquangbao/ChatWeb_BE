@@ -16,4 +16,9 @@ export interface IFriendsService {
     myId: string,
     idRooms: string,
   ): Promise<DeleteFriendDto>;
+  undoFriends(
+    idNotAction: string,
+    myId: string,
+    idRooms: string,
+  ): Promise<DeleteFriendDto>;
 }

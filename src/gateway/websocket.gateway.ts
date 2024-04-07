@@ -168,17 +168,43 @@ export class MessagingGateway implements OnGatewayConnection {
       `updateSendedFriend${payload.emailUserActions}`,
       await payload.roomsUpdateMessage,
     );
+    console.log(payload.emailUserActions);
     if (
       payload.emailUserActions === payload.roomsUpdateMessage.recipient.email
     ) {
+      console.log(payload.roomsUpdateMessage.creator.email);
       return this.server.emit(
         `updateSendedFriend${payload.roomsUpdateMessage.creator.email}`,
         await payload.roomsUpdateMessage,
       );
     }
     if (payload.emailUserActions === payload.roomsUpdateMessage.creator.email) {
+      console.log(payload.roomsUpdateMessage.recipient.email);
       return this.server.emit(
         `updateSendedFriend${payload.roomsUpdateMessage.recipient.email}`,
+        await payload.roomsUpdateMessage,
+      );
+    }
+  }
+  @OnEvent('accept.friends')
+  async handleSeeAddFriendRoom(payload: any) {
+    const idRooms = payload.roomsUpdateMessage._id;
+    const idP = idRooms.toString();
+    this.server.emit(
+      `updateSendedFriend${idP}${payload.emailUserActions}`,
+      await payload.roomsUpdateMessage,
+    );
+    if (
+      payload.emailUserActions === payload.roomsUpdateMessage.recipient.email
+    ) {
+      return this.server.emit(
+        `updateSendedFriend${idP}${payload.roomsUpdateMessage.creator.email}`,
+        await payload.roomsUpdateMessage,
+      );
+    }
+    if (payload.emailUserActions === payload.roomsUpdateMessage.creator.email) {
+      return this.server.emit(
+        `updateSendedFriend${idP}${payload.roomsUpdateMessage.recipient.email}`,
         await payload.roomsUpdateMessage,
       );
     }
@@ -212,20 +238,39 @@ export class MessagingGateway implements OnGatewayConnection {
       );
     }
   }
-  // @OnEvent('send.friends')
-  // async handleSendFriendRooms(payload: any) {
-  //   this.server.emit(`unfriends${payload.emailUserActions}`, customer);
-  //   if (payload.emailUserActions === payload.userActions.email) {
-  //     return this.server.emit(
-  //       `unfriends${payload.userAccept.email}`,
-  //       await payload,
-  //     );
-  //   }
-  //   if (payload.emailUserActions === payload.userAccept.email) {
-  //     return this.server.emit(
-  //       `unfriends${payload.userActions.email}`,
-  //       await payload,
-  //     );
-  //   }
-  // }
+  @OnEvent('send.friends')
+  async handleSendFriendRooms(payload: any) {
+    const action = {
+      emailUserActions: payload.userActions.email,
+      userActions: payload.userSend,
+      userAccept: payload.userAccept,
+      reload: true,
+    };
+    this.server.emit(`sendfriends${payload.userActions.email}`, action);
+    if (payload.userActions.email === payload.userSend.email) {
+      return this.server.emit(
+        `sendfriends${payload.userAccept.email}`,
+        await payload,
+      );
+    }
+    if (payload.userActions.email === payload.userAccept.email) {
+      return this.server.emit(
+        `sendfriends${payload.userActions.email}`,
+        await payload,
+      );
+    }
+  }
+  @OnEvent('undo.friends')
+  async handleUndoFriendRooms(payload: any) {
+    this.server.emit(`undo${payload.emailUserActions}`, payload);
+    if (payload.emailUserActions === payload.userActions.email) {
+      return this.server.emit(`undo${payload.userAccept.email}`, await payload);
+    }
+    if (payload.emailUserActions === payload.userAccept.email) {
+      return this.server.emit(
+        `undo${payload.userActions.email}`,
+        await payload,
+      );
+    }
+  }
 }

@@ -19,7 +19,7 @@ import { AuthUser } from 'src/untills/decorater';
 import { UsersPromise } from 'src/auth/dtos/Users.dto';
 import { Response } from 'express';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { DeleteMessages, UpdateMessages } from 'src/untills/types';
+import { DeleteMessages, UpdateEmoji, UpdateMessages } from 'src/untills/types';
 import { AuthenticatedGuard } from 'src/auth/untills/Guards';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
@@ -127,6 +127,29 @@ export class MessagesController {
       return updateMessages;
     } catch (error) {
       return error;
+    }
+  }
+  @Patch(':id/updateEmoji')
+  async updateEmoji(
+    @Param('id') id: string,
+    @Body() updateMessage: UpdateEmoji,
+    @AuthUser() user: UsersPromise,
+    @Res() res: Response,
+  ) {
+    try {
+      const updateEmoji = await this.messageServices.iconOnMessages(
+        id,
+        updateMessage,
+      );
+      // this.events.emit('messages.updated', {
+      //   roomsUpdate: updateMessages,
+      //   email: user.email,
+      //   idMessages: updateMessage.idMessages,
+      //   messagesNew: updateMessage.newMessages,
+      // });
+      return res.send(updateEmoji);
+    } catch (error) {
+      return res.send(error);
     }
   }
 }

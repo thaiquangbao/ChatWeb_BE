@@ -7,10 +7,12 @@ import {
   CreateMessageParams,
   CreateMessageResponse,
   DeleteMessages,
+  UpdateEmoji,
   UpdateMessages,
 } from '../untills/types';
 import { Rooms } from 'src/entities/Rooms';
 import { RoomsPromise } from 'src/room/dto/RoomDTO.dto';
+import { MessagesRoomsUpdate, MessagesUpdate } from './dto/Messages.dto';
 
 @Injectable()
 export class MessagesService implements IMessageService {
@@ -18,6 +20,101 @@ export class MessagesService implements IMessageService {
     @InjectModel(Messages.name) private readonly messagesModel: Model<Messages>,
     @InjectModel(Rooms.name) private roomsModel: Model<Rooms>,
   ) {}
+  async iconOnMessages(
+    id: string,
+    updateEmoji: UpdateEmoji,
+  ): Promise<MessagesRoomsUpdate> {
+    try {
+      const { newEmoji, idMessages, idLastMessageSent, email } = updateEmoji;
+      const objectIdMessage = new mongoose.Types.ObjectId(idMessages);
+      const findRooms = await this.roomsModel.findById(id);
+      if (!findRooms) {
+        throw new HttpException('Phòng không tồn tại', HttpStatus.BAD_REQUEST);
+      }
+      const findMessages = await this.messagesModel.findById(objectIdMessage);
+      if (!findMessages) {
+        throw new HttpException(
+          'Tin nhắn không tồn tại',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+      const updateMessage = await this.messagesModel.updateOne(
+        { _id: findMessages.id },
+        { emoji: newEmoji },
+        { new: true },
+      );
+      if (updateMessage.modifiedCount <= 0) {
+        throw new HttpException(
+          'Không thể cập nhật tin nhắn',
+          HttpStatus.CONFLICT,
+        );
+      }
+      if (idMessages === idLastMessageSent) {
+        const objectIdRoomId = new mongoose.Types.ObjectId(idMessages);
+        const dataMessageUpdate = {
+          'messages.$.emoji': newEmoji, // Chỉ cập nhật nội dung
+          'messages.$.content': findMessages.content,
+          'messages.$.updatedAt': new Date(), // Cập nhật thời gian cập nhật
+          // Cập nhật thông tin tác giả nếu cần
+          'messages.$.email': email,
+          'messages.$.author': findMessages.author.fullName,
+        };
+        const newLastMessages = {
+          _id: objectIdRoomId,
+          content: findMessages.content,
+          emoji: newEmoji,
+          author: {
+            email: email,
+            fullName: findMessages.author.fullName,
+          },
+          updatedAt: new Date(),
+        };
+        const updatedRooms = await this.roomsModel.findOneAndUpdate(
+          { _id: id, 'messages._id': objectIdMessage }, // Lọc theo id của room và id của tin nhắn trong mảng messages
+          { $set: dataMessageUpdate }, // Cập nhật nội dung tin nhắn
+          { new: true },
+        );
+        if (!updatedRooms) {
+          throw new HttpException(
+            'Không thể cập nhật tin nhắn last',
+            HttpStatus.CONFLICT,
+          );
+        }
+        // // Cập nhật lastMessageSent với thông tin từ message cuối cùng hoặc đặt là đối tượng rỗng nếu không còn messages
+        const objRoomNew = new mongoose.Types.ObjectId(id);
+        const resultLastMessage = await this.roomsModel.findOneAndUpdate(
+          { _id: objRoomNew },
+          { $set: { lastMessageSent: newLastMessages } },
+          { new: true },
+        );
+        return {
+          idMessages: findMessages.id,
+          messagesUpdate: findMessages,
+          roomsUpdate: resultLastMessage,
+        };
+      }
+      const dataUpdate1 = {
+        'messages.$.emoji': newEmoji, // Chỉ cập nhật nội dung
+        'messages.$.content': findMessages.content,
+        'messages.$.updatedAt': new Date(), // Cập nhật thời gian cập nhật
+        // Cập nhật thông tin tác giả nếu cần
+        'messages.$.email': email,
+        'messages.$.author': findMessages.author.fullName,
+      };
+      const updatedRooms1 = await this.roomsModel.findOneAndUpdate(
+        { _id: id, 'messages._id': objectIdMessage }, // Lọc theo id của room và id của tin nhắn trong mảng messages
+        { $set: dataUpdate1 }, // Cập nhật nội dung tin nhắn
+        { new: true },
+      );
+      return {
+        idMessages: findMessages.id,
+        messagesUpdate: findMessages,
+        roomsUpdate: updatedRooms1,
+      };
+    } catch (error) {
+      console.log(error);
+    }
+  }
   async updateMessage(
     fullName: string,
     id: string,
@@ -203,6 +300,7 @@ export class MessagesService implements IMessageService {
     const dataMessage = {
       _id: messageSave._id,
       content: messageSave.content,
+      emoji: messageSave.emoji,
       author: messageSave.author.fullName,
       email: messageSave.author.email,
       createdAt: new Date(),
@@ -215,6 +313,7 @@ export class MessagesService implements IMessageService {
     const dataLastMessages = {
       _id: messageSave._id,
       content: messageSave.content,
+      emoji: messageSave.emoji,
       author: dataAuth,
       createdAt: new Date(),
     };
