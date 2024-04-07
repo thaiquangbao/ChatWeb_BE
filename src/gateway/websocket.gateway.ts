@@ -13,6 +13,9 @@ import { IRoomsService } from 'src/room/room';
 import { Services } from 'src/untills/constain';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { IMessageService } from 'src/messages/messages';
+import { Model } from 'mongoose';
+import { Messages } from 'src/entities/Message';
+import { InjectModel } from '@nestjs/mongoose';
 @WebSocketGateway({
   cors: {
     origin: ['http://localhost:3000'],
@@ -21,6 +24,7 @@ import { IMessageService } from 'src/messages/messages';
 })
 export class MessagingGateway implements OnGatewayConnection {
   constructor(
+    @InjectModel(Messages.name) private readonly messagesModel: Model<Messages>,
     @Inject(Services.MESSAGES)
     private readonly messagesService: IMessageService,
     @Inject(Services.ROOMS)
@@ -272,5 +276,15 @@ export class MessagingGateway implements OnGatewayConnection {
         await payload,
       );
     }
+  }
+  @OnEvent('messages.emoji')
+  async handleEmoji(payload: any) {
+    const newMess = await this.messagesModel.findById(payload.idMessages);
+    const dataMessages = {
+      idMessages: payload.idMessages,
+      messagesUpdate: newMess,
+      roomsUpdate: payload.roomsUpdate,
+    };
+    return this.server.emit(`emoji${payload.roomsUpdate.id}`, dataMessages);
   }
 }

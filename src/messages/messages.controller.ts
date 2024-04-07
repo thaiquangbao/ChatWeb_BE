@@ -141,12 +141,7 @@ export class MessagesController {
         id,
         updateMessage,
       );
-      // this.events.emit('messages.updated', {
-      //   roomsUpdate: updateMessages,
-      //   email: user.email,
-      //   idMessages: updateMessage.idMessages,
-      //   messagesNew: updateMessage.newMessages,
-      // });
+      this.events.emit('messages.emoji', updateEmoji);
       return res.send(updateEmoji);
     } catch (error) {
       return res.send(error);
