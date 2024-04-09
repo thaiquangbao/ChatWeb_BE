@@ -4,8 +4,10 @@ import { Messages } from 'src/entities/Message';
 import { InjectModel } from '@nestjs/mongoose';
 import mongoose, { Model } from 'mongoose';
 import {
+  CreateMessageGroupParams,
   CreateMessageParams,
   CreateMessageResponse,
+  CreateMessageRoomsResponse,
   DeleteMessages,
   UpdateEmoji,
   UpdateMessages,
@@ -13,13 +15,70 @@ import {
 import { Rooms } from 'src/entities/Rooms';
 import { RoomsPromise } from 'src/room/dto/RoomDTO.dto';
 import { MessagesRoomsUpdate, MessagesUpdate } from './dto/Messages.dto';
+import { GroupRooms } from 'src/entities/Groups';
 
 @Injectable()
 export class MessagesService implements IMessageService {
   constructor(
     @InjectModel(Messages.name) private readonly messagesModel: Model<Messages>,
     @InjectModel(Rooms.name) private roomsModel: Model<Rooms>,
+    @InjectModel(GroupRooms.name) private groupsModel: Model<GroupRooms>,
   ) {}
+  createMessagesForGroup(createMessageParams: CreateMessageGroupParams) {
+    // : Promise<CreateMessageRoomsResponse>
+    // const { content, groupsID, user } = createMessageParams;
+    // const rooms = await this.roomsModel
+    //   .findOne({ _id: roomsID })
+    //   .populate('creator')
+    //   .populate('recipient');
+    // if (!rooms) {
+    //   throw new HttpException('Room not exist', HttpStatus.BAD_REQUEST);
+    // }
+    // const { recipient, creator } = rooms;
+    // // if (creator.email !== user.email && recipient.email !== user.email) {
+    // //   throw new HttpException('Not create Messages', HttpStatus.BAD_REQUEST);
+    // // }
+    // if (creator.email !== user.email && recipient.email !== user.email) {
+    //   throw new HttpException('Not create Messages', HttpStatus.BAD_REQUEST);
+    // }
+    // const newMessage = await this.messagesModel.create({
+    //   content: content,
+    //   rooms: rooms,
+    //   author: user,
+    // });
+    // const messageSave = await newMessage.save();
+    // const dataMessage = {
+    //   _id: messageSave._id,
+    //   content: messageSave.content,
+    //   emoji: messageSave.emoji,
+    //   author: messageSave.author.fullName,
+    //   email: messageSave.author.email,
+    //   createdAt: new Date(),
+    // };
+    // const dataAuth = {
+    //   email: messageSave.author.email,
+    //   fullName: messageSave.author.fullName,
+    // };
+    // //rooms.lastMessageSent = messageSave;
+    // const dataLastMessages = {
+    //   _id: messageSave._id,
+    //   content: messageSave.content,
+    //   emoji: messageSave.emoji,
+    //   author: dataAuth,
+    //   createdAt: new Date(),
+    // };
+    // // Cập nhật lại lastMessage vào phòng chat bỏ id messges vào trong đó
+    // const updated = await this.roomsModel.findOneAndUpdate(
+    //   { _id: rooms.id },
+    //   {
+    //     $set: { lastMessageSent: dataLastMessages },
+    //     $push: { messages: dataMessage },
+    //   },
+    //   { new: true },
+    // );
+    // //return messageSave;
+    // return { message: messageSave, rooms: updated };
+  }
   async iconOnMessages(
     id: string,
     updateEmoji: UpdateEmoji,

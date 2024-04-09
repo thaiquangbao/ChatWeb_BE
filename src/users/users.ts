@@ -1,4 +1,8 @@
-import { UsersPromise, ValidAccount } from 'src/auth/dtos/Users.dto';
+import {
+  CreateUsers,
+  UsersPromise,
+  ValidAccount,
+} from 'src/auth/dtos/Users.dto';
 import { User } from 'src/entities/users';
 import {
   CreateRoomsParams,
@@ -15,4 +19,5 @@ export interface IUserService {
   findUsersByEmail(roomsParams: CreateRoomsParams): Promise<UsersPromise>;
   takeAccount(account: ValidateUser);
   deleteAccount(id: string);
+  findOneUsers(email: ValidateUser): Promise<CreateUsers>;
 }

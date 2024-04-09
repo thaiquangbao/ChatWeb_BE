@@ -1,6 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Exclude } from 'class-transformer';
 import { Messages } from './Message';
+import { GroupRooms } from './Groups';
 
 @Schema({
   timestamps: true,
@@ -33,5 +34,7 @@ export class User {
   sendFriend: User[];
   @Prop({ type: Array, default: () => [] })
   waitAccept: User[];
+  @Prop({ type: Array, default: () => [] })
+  groupRooms: GroupRooms[];
 }
 export const UsersSchema = SchemaFactory.createForClass(User);

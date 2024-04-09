@@ -81,14 +81,14 @@ export class MessagingGateway implements OnGatewayConnection {
     console.log('Đã tham gia phòng');
     client.join(data.roomsId);
     console.log(client.session);
-    client.to(data.roomsId).emit('userJoin');
+    client.to(data.roomsId).emit(`userJoin${data.roomsId}`);
   }
   @SubscribeMessage('onRoomLeave')
   async onLeaveRooms(@MessageBody() data: any, @ConnectedSocket() client: any) {
     console.log('Đã rời tham gia phòng');
     client.join(data.roomsId);
     console.log(client.session);
-    client.to(data.roomsId).emit('userLeave');
+    client.to(data.roomsId).emit(`userLeave${data.roomsId}`);
   }
   @SubscribeMessage('onUserTyping')
   async handleUserTyping(
@@ -286,5 +286,31 @@ export class MessagingGateway implements OnGatewayConnection {
       roomsUpdate: payload.roomsUpdate,
     };
     return this.server.emit(`emoji${payload.roomsUpdate.id}`, dataMessages);
+  }
+  @SubscribeMessage('onOnline')
+  async onOnline(@MessageBody() data: any, @ConnectedSocket() client: any) {
+    const { user } = data;
+    const friendIds = user.friends.map((friend: any) => friend.email);
+
+    // Lưu trạng thái online của người dùng vào một cơ sở dữ liệu hoặc bộ nhớ tạm thời
+    client.join(user.email);
+    // Gửi thông báo trực tuyến cho những người bạn
+    friendIds.forEach((email: string) => {
+      // Gửi trạng thái online của người dùng tới bạn bè
+      client.to(email).emit('userOnline', user);
+    });
+  }
+  @SubscribeMessage('onOffline')
+  async onOffline(@MessageBody() data: any, @ConnectedSocket() client: any) {
+    const { user } = data;
+    const friendIds = user.friends.map((friend: any) => friend.email);
+
+    // Lưu trạng thái online của người dùng vào một cơ sở dữ liệu hoặc bộ nhớ tạm thời
+    client.join(user.email);
+    // Gửi thông báo trực tuyến cho những người bạn
+    friendIds.forEach((email: string) => {
+      // Gửi trạng thái online của người dùng tới bạn bè
+      client.to(email).emit('userOffline', user);
+    });
   }
 }

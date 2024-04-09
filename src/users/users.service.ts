@@ -12,6 +12,7 @@ import { User } from 'src/entities/users';
 import { hashPassword } from 'src/untills/helpers';
 import {
   CheckUsers,
+  CreateUsers,
   UsersPromise,
   ValidAccount,
 } from 'src/auth/dtos/Users.dto';
@@ -29,6 +30,10 @@ export class UsersService implements IUserService {
     @InjectModel(Messages.name) private messagesEntity: Model<Messages>,
     @InjectModel(Rooms.name) private roomsEntity: Model<Rooms>,
   ) {}
+  async findOneUsers(email: ValidateUser): Promise<CreateUsers> {
+    const users = await this.userModel.findOne({ email: email.email });
+    return users;
+  }
   async deleteAccount(id: string) {
     const userExist = await this.userModel.findById(id);
     if (!userExist) {

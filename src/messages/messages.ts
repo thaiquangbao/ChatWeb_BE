@@ -1,7 +1,9 @@
 import { Messages } from 'src/entities/Message';
 import {
+  CreateMessageGroupParams,
   CreateMessageParams,
   CreateMessageResponse,
+  CreateMessageRoomsResponse,
   DeleteMessages,
   UpdateEmoji,
   UpdateMessages,
@@ -23,4 +25,5 @@ export interface IMessageService {
     id: string,
     updateEmoji: UpdateEmoji,
   ): Promise<MessagesRoomsUpdate>;
+  createMessagesForGroup(createMessageParams: CreateMessageGroupParams); //: Promise<CreateMessageRoomsResponse>;
 }

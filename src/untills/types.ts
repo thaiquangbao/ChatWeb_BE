@@ -2,6 +2,7 @@ import { UsersPromise } from 'src/auth/dtos/Users.dto';
 import { Messages } from 'src/entities/Message';
 import { Rooms } from 'src/entities/Rooms';
 import { Request } from 'express';
+import { GroupRooms } from 'src/entities/Groups';
 export type CreateUserDetails = {
   fullName: string;
   phoneNumber: string;
@@ -107,4 +108,20 @@ export type SendFriendInvitations = {
 };
 export type FindRooms = {
   idRooms: string;
+};
+export type CreateGroupParams = {
+  participants: string[];
+};
+export type FetchGroupParams = {
+  idGroups: string;
+};
+export type CreateMessageGroupParams = {
+  //id: string;
+  content: string;
+  groupsID: string;
+  user: UsersPromise;
+};
+export type CreateMessageRoomsResponse = {
+  message: Messages;
+  groups: GroupRooms;
 };

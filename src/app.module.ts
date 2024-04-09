@@ -21,6 +21,7 @@ import { CloudinaryModule } from './cloudinary/cloudinary.module';
 import { CloudinaryProvider } from './cloudinary/cloudinary.provider';
 import { CloudinaryService } from './cloudinary/cloudinary.service';
 import { FriendsModule } from './friends/friends.module';
+import { GroupRoomsModule } from './group-rooms/group-rooms.module';
 
 // PassportModule.register({ defaultStrategy: "jwt" }),
 @Module({
@@ -60,6 +61,7 @@ import { FriendsModule } from './friends/friends.module';
     GatewayModule,
     CloudinaryModule,
     FriendsModule,
+    GroupRoomsModule,
   ],
   controllers: [],
   providers: [

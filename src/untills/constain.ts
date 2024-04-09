@@ -4,6 +4,7 @@ export enum Routes {
   ROOMS = 'rooms',
   MESSAGES = 'messages',
   FRIENDS = 'friends',
+  GROUPS = 'groups',
 }
 export enum Services {
   AUTH = 'AUTH_SERVICE',
@@ -12,4 +13,5 @@ export enum Services {
   MESSAGES = 'MESSAGES_SERVICE',
   GATEWAY_SESSION_MANAGER = 'GATEWAY_SESSION',
   FRIENDS = 'FRIENDS_SERVICE',
+  GROUPS = 'GROUPS_SERVICE',
 }

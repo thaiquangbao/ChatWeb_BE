@@ -33,11 +33,13 @@ import {
 } from 'src/untills/types';
 import { AuthUser } from 'src/untills/decorater';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 @Controller(Routes.AUTH)
 export class AuthController {
   constructor(
     @Inject(Services.AUTH) private authService: IAuthService,
     @Inject(Services.USERS) private userService: IUserService,
+    private readonly events: EventEmitter2,
   ) {}
   @Post('register')
   async register(@Body() authDTO: CreateUsers, @Res() res: Response) {
@@ -63,6 +65,7 @@ export class AuthController {
       cookie,
       auth,
     };
+    // this.events.emit('online.user', respondData);
     res.send(respondData);
   }
   @Get('checkCookie')
@@ -109,6 +112,7 @@ export class AuthController {
   @Post('logout')
   @UseGuards(AuthenticatedGuard)
   logout(@Req() req: AuthenticatedRequest, @Res() res: Response) {
+    // this.events.emit('offline.user');
     req.logout((err: any) => {
       return err ? res.send(400) : res.send(200);
     });
