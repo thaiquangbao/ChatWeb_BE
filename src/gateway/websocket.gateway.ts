@@ -16,6 +16,7 @@ import { IMessageService } from 'src/messages/messages';
 import { Model } from 'mongoose';
 import { Messages } from 'src/entities/Message';
 import { InjectModel } from '@nestjs/mongoose';
+import { User } from 'src/entities/users';
 @WebSocketGateway({
   cors: {
     origin: ['http://localhost:3000'],
@@ -25,6 +26,7 @@ import { InjectModel } from '@nestjs/mongoose';
 export class MessagingGateway implements OnGatewayConnection {
   constructor(
     @InjectModel(Messages.name) private readonly messagesModel: Model<Messages>,
+    @InjectModel(User.name) private readonly usersModel: Model<User>,
     @Inject(Services.MESSAGES)
     private readonly messagesService: IMessageService,
     @Inject(Services.ROOMS)
@@ -287,30 +289,11 @@ export class MessagingGateway implements OnGatewayConnection {
     };
     return this.server.emit(`emoji${payload.roomsUpdate.id}`, dataMessages);
   }
-  @SubscribeMessage('onOnline')
-  async onOnline(@MessageBody() data: any, @ConnectedSocket() client: any) {
-    const { user } = data;
-    const friendIds = user.friends.map((friend: any) => friend.email);
-
-    // Lưu trạng thái online của người dùng vào một cơ sở dữ liệu hoặc bộ nhớ tạm thời
-    client.join(user.email);
-    // Gửi thông báo trực tuyến cho những người bạn
-    friendIds.forEach((email: string) => {
-      // Gửi trạng thái online của người dùng tới bạn bè
-      client.to(email).emit('userOnline', user);
-    });
-  }
-  @SubscribeMessage('onOffline')
-  async onOffline(@MessageBody() data: any, @ConnectedSocket() client: any) {
-    const { user } = data;
-    const friendIds = user.friends.map((friend: any) => friend.email);
-
-    // Lưu trạng thái online của người dùng vào một cơ sở dữ liệu hoặc bộ nhớ tạm thời
-    client.join(user.email);
-    // Gửi thông báo trực tuyến cho những người bạn
-    friendIds.forEach((email: string) => {
-      // Gửi trạng thái online của người dùng tới bạn bè
-      client.to(email).emit('userOffline', user);
-    });
-  }
+  // @OnEvent('online.user')
+  // async handleOnline(payload: any) {
+  //   const updateStatus = await this.usersModel.findAndUpdate({
+  //     email: payload.email,
+  //   });
+  //   return this.server.emit(`online${payload.auth.email}`, await payload);
+  // }
 }

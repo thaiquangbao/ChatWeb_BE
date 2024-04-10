@@ -65,7 +65,7 @@ export class AuthController {
       cookie,
       auth,
     };
-    // this.events.emit('online.user', respondData);
+    this.events.emit('online.user', respondData);
     res.send(respondData);
   }
   @Get('checkCookie')

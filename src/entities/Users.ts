@@ -36,5 +36,7 @@ export class User {
   waitAccept: User[];
   @Prop({ type: Array, default: () => [] })
   groupRooms: GroupRooms[];
+  @Prop({ type: Boolean, default: false })
+  online: boolean;
 }
 export const UsersSchema = SchemaFactory.createForClass(User);

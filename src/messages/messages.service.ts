@@ -24,26 +24,27 @@ export class MessagesService implements IMessageService {
     @InjectModel(Rooms.name) private roomsModel: Model<Rooms>,
     @InjectModel(GroupRooms.name) private groupsModel: Model<GroupRooms>,
   ) {}
-  createMessagesForGroup(createMessageParams: CreateMessageGroupParams) {
+  async createMessagesForGroup(createMessageParams: CreateMessageGroupParams) {
     // : Promise<CreateMessageRoomsResponse>
     // const { content, groupsID, user } = createMessageParams;
-    // const rooms = await this.roomsModel
-    //   .findOne({ _id: roomsID })
+    // const groups = await this.groupsModel
+    //   .findOne({ _id: groupsID })
     //   .populate('creator')
-    //   .populate('recipient');
-    // if (!rooms) {
+    //   .populate('participants');
+    // if (!groups) {
     //   throw new HttpException('Room not exist', HttpStatus.BAD_REQUEST);
     // }
-    // const { recipient, creator } = rooms;
+    // const { participants, creator } = groups;
     // // if (creator.email !== user.email && recipient.email !== user.email) {
     // //   throw new HttpException('Not create Messages', HttpStatus.BAD_REQUEST);
     // // }
-    // if (creator.email !== user.email && recipient.email !== user.email) {
+    // const exists = participants.some((item) => item.email === user.email);
+    // if (creator.email !== user.email && !exists) {
     //   throw new HttpException('Not create Messages', HttpStatus.BAD_REQUEST);
     // }
     // const newMessage = await this.messagesModel.create({
     //   content: content,
-    //   rooms: rooms,
+    //   groups: groups,
     //   author: user,
     // });
     // const messageSave = await newMessage.save();
