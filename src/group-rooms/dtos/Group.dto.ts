@@ -7,4 +7,5 @@ export class CreateGroupsDto {
   @IsString({ each: true })
   participants: string[];
   creator: UsersPromise;
+  nameGroups?: string;
 }

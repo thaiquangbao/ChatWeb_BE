@@ -25,5 +25,4 @@ export interface IMessageService {
     id: string,
     updateEmoji: UpdateEmoji,
   ): Promise<MessagesRoomsUpdate>;
-  createMessagesForGroup(createMessageParams: CreateMessageGroupParams); //: Promise<CreateMessageRoomsResponse>;
 }

@@ -1,6 +1,6 @@
 import { UsersPromise } from 'src/auth/dtos/Users.dto';
 import { GroupRooms } from 'src/entities/Groups';
-import { CreateGroupParams, FetchGroupParams } from 'src/untills/types';
+import { CreateGroupParams } from 'src/untills/types';
 
 export interface IGroups {
   createGroups(
@@ -9,4 +9,6 @@ export interface IGroups {
   ): Promise<GroupRooms>;
   getGroups(userCreate: UsersPromise): Promise<GroupRooms[]>;
   getGroupsById(id: string): Promise<GroupRooms>;
+  deleteGroups(user: UsersPromise, idRooms: string);
+  leaveGroups(user: UsersPromise, idRooms: string);
 }

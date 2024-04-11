@@ -5,6 +5,7 @@ export enum Routes {
   MESSAGES = 'messages',
   FRIENDS = 'friends',
   GROUPS = 'groups',
+  CHATGROUPS = 'chatgroups',
 }
 export enum Services {
   AUTH = 'AUTH_SERVICE',
@@ -14,4 +15,5 @@ export enum Services {
   GATEWAY_SESSION_MANAGER = 'GATEWAY_SESSION',
   FRIENDS = 'FRIENDS_SERVICE',
   GROUPS = 'GROUPS_SERVICE',
+  CHATGROUPS = 'CHATGROUPS_SERVICE',
 }

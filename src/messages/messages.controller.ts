@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Delete,
+  HttpException,
   HttpStatus,
   Inject,
   Param,
@@ -62,6 +63,10 @@ export class MessagesController {
     @Res() res: Response,
   ) {
     try {
+      const maxSizeMP4 = 50000000;
+      if (file.size > maxSizeMP4) {
+        throw new HttpException('File chỉ tối đa 2MB', HttpStatus.BAD_REQUEST);
+      }
       const imageNew = await this.cloudinaryServices.uploadFile(file);
       res.send(imageNew.url);
     } catch (error) {

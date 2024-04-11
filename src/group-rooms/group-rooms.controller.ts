@@ -15,13 +15,15 @@ import { UsersPromise } from 'src/auth/dtos/Users.dto';
 import { CreateGroupsDto } from './dtos/group.dto';
 import { AuthUser } from 'src/untills/decorater';
 import { Response } from 'express';
-import { FetchGroupParams } from 'src/untills/types';
+import { GetMessagesGroupDTO } from 'src/chat-group/dtos/chat-group.dto';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Controller(Routes.GROUPS)
 @UseGuards(AuthenticatedGuard)
 export class GroupRoomsController {
   constructor(
     @Inject(Services.GROUPS) private readonly groupServices: GroupRoomsService,
+    private readonly events: EventEmitter2,
   ) {}
   @Post()
   async createGroups(
@@ -31,9 +33,10 @@ export class GroupRoomsController {
   ) {
     try {
       const groups = await this.groupServices.createGroups(user, createRooms);
+      this.events.emit('groups.create', groups);
       return res.send(groups);
     } catch (error) {
-      return res.send(error);
+      return error;
     }
   }
   @Get()
@@ -55,6 +58,42 @@ export class GroupRoomsController {
       const groups = await this.groupServices.getGroupsById(id);
       return res.send(groups);
     } catch (error) {
+      return res.send(error);
+    }
+  }
+  @Post('deleteGroups')
+  async deleteGroups(
+    @AuthUser() user: UsersPromise,
+    @Res() res: Response,
+    @Body() groupMessages: GetMessagesGroupDTO,
+  ) {
+    try {
+      const deleteGroups = await this.groupServices.deleteGroups(
+        user,
+        groupMessages.groupId,
+      );
+      this.events.emit('delete.groups', deleteGroups);
+      return res.send(deleteGroups);
+    } catch (error) {
+      console.log(error);
+      return res.send(error);
+    }
+  }
+  @Post('leaveGroups')
+  async leaveGroups(
+    @AuthUser() user: UsersPromise,
+    @Res() res: Response,
+    @Body() groupMessages: GetMessagesGroupDTO,
+  ) {
+    try {
+      const leaveGroups = await this.groupServices.leaveGroups(
+        user,
+        groupMessages.groupId,
+      );
+      this.events.emit('leave.groups', leaveGroups);
+      return res.send(leaveGroups);
+    } catch (error) {
+      console.log(error);
       return res.send(error);
     }
   }

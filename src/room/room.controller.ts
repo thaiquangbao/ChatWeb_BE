@@ -19,7 +19,6 @@ import { RoomDTO } from './dto/RoomDTO.dto';
 import { UsersPromise } from 'src/auth/dtos/Users.dto';
 import { AuthUser } from '../untills/decorater';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { FindRooms } from 'src/untills/types';
 
 @Controller(Routes.ROOMS)
 @UseGuards(AuthenticatedGuard)

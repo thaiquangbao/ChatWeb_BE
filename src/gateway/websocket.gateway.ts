@@ -215,6 +215,19 @@ export class MessagingGateway implements OnGatewayConnection {
       );
     }
   }
+  @OnEvent('accept.friends')
+  async handleAddFriendGroup(payload: any) {
+    this.server.emit(
+      `updateAcceptFriendsGroups${payload.userSend.email}`,
+      await payload.userAccept,
+    );
+    if (payload.userSend.email !== payload.userAccept.email) {
+      return this.server.emit(
+        `updateAcceptFriendsGroups${payload.userAccept.email}`,
+        await payload.userSend,
+      );
+    }
+  }
   @OnEvent('rooms.delete')
   async handleDeleteRooms(payload: any) {
     const idRooms = payload._id;
@@ -241,6 +254,19 @@ export class MessagingGateway implements OnGatewayConnection {
       return this.server.emit(
         `unfriends${payload.userActions.email}`,
         await payload,
+      );
+    }
+  }
+  @OnEvent('unfriends.friends')
+  async handleDeleteUnfriendsGroups(payload: any) {
+    this.server.emit(
+      `updateUnFriendsGroups${payload.userActions.email}`,
+      await payload.userAccept,
+    );
+    if (payload.userActions.email !== payload.userAccept.email) {
+      return this.server.emit(
+        `updateUnFriendsGroups${payload.userAccept.email}`,
+        await payload.userActions,
       );
     }
   }
@@ -289,11 +315,14 @@ export class MessagingGateway implements OnGatewayConnection {
     };
     return this.server.emit(`emoji${payload.roomsUpdate.id}`, dataMessages);
   }
-  // @OnEvent('online.user')
-  // async handleOnline(payload: any) {
-  //   const updateStatus = await this.usersModel.findAndUpdate({
-  //     email: payload.email,
-  //   });
-  //   return this.server.emit(`online${payload.auth.email}`, await payload);
-  // }
+  @OnEvent('groups.create')
+  async handleGroupsCreateEvent(payload: any) {
+    //console.log('Đã vào được chức năng tạo messages');
+    this.server.emit(`createGroups${payload.creator.email}`, payload);
+    payload.participants.forEach((participant) => {
+      if (payload.creator.email !== participant.email) {
+        return this.server.emit(`createGroups${participant.email}`, payload);
+      }
+    });
+  }
 }

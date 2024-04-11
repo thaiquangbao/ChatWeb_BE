@@ -3,6 +3,7 @@ import { Messages } from 'src/entities/Message';
 import { Rooms } from 'src/entities/Rooms';
 import { Request } from 'express';
 import { GroupRooms } from 'src/entities/Groups';
+import { MessagesGroup } from 'src/entities/MessagesGroup';
 export type CreateUserDetails = {
   fullName: string;
   phoneNumber: string;
@@ -75,6 +76,11 @@ export type UpdateMessages = {
   idLastMessageSent: string;
   email: string;
 };
+export type UpdateGroupsMessages = {
+  idMessages: string;
+  idLastMessageSent: string;
+  email: string;
+};
 export type UpdateEmoji = {
   newEmoji: string;
   idMessages: string;
@@ -109,8 +115,13 @@ export type SendFriendInvitations = {
 export type FindRooms = {
   idRooms: string;
 };
+export interface AnswerMessagesGroups {
+  content: string;
+  idMessages: string;
+}
 export type CreateGroupParams = {
   participants: string[];
+  nameGroups?: string;
 };
 export type FetchGroupParams = {
   idGroups: string;
@@ -122,6 +133,6 @@ export type CreateMessageGroupParams = {
   user: UsersPromise;
 };
 export type CreateMessageRoomsResponse = {
-  message: Messages;
+  message: MessagesGroup;
   groups: GroupRooms;
 };

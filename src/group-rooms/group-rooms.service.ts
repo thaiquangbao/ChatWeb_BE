@@ -1,6 +1,6 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { IGroups } from './group';
-import { CreateGroupParams, FetchGroupParams } from 'src/untills/types';
+import { CreateGroupParams } from 'src/untills/types';
 import { UsersPromise } from 'src/auth/dtos/Users.dto';
 import { GroupRooms } from 'src/entities/Groups';
 import { InjectModel } from '@nestjs/mongoose';
@@ -16,6 +16,54 @@ export class GroupRoomsService implements IGroups {
     @InjectModel(GroupRooms.name) private groupsModel: Model<GroupRooms>,
     @Inject(Services.USERS) private readonly userService: IUserService,
   ) {}
+  async deleteGroups(user: UsersPromise, idRooms: string) {
+    const objectIdGroupId = new mongoose.Types.ObjectId(idRooms);
+    const fileGroups = await this.groupsModel.findOne({
+      _id: objectIdGroupId,
+    });
+    if (!fileGroups) {
+      throw new HttpException('Not exist Groups', HttpStatus.BAD_REQUEST);
+    }
+    const objectIdCreatorId = new mongoose.Types.ObjectId(user.id);
+    const fileOwnGroups = await this.groupsModel.findOne({
+      _id: fileGroups._id,
+      'creator._id': objectIdCreatorId,
+    });
+    if (!fileOwnGroups) {
+      throw new HttpException('You Not Creator Rooms', HttpStatus.BAD_REQUEST);
+    }
+    const deleteGroups = await this.groupsModel.findOneAndDelete(fileGroups.id);
+    return deleteGroups;
+  }
+  async leaveGroups(user: UsersPromise, idRooms: string) {
+    const objectIdGroupId = new mongoose.Types.ObjectId(idRooms);
+    const fileGroups = await this.groupsModel.findOne({
+      _id: objectIdGroupId,
+    });
+    if (!fileGroups) {
+      throw new HttpException('Not exist Groups', HttpStatus.BAD_REQUEST);
+    }
+    const objectIdParticipantsId = new mongoose.Types.ObjectId(user.id);
+    const fileOwnGroups = await this.groupsModel.findOne({
+      _id: fileGroups._id,
+      'creator._id': objectIdParticipantsId,
+    });
+    if (fileOwnGroups) {
+      throw new HttpException(
+        'Bạn là chủ phòng bạn không thể rời đi',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+    const idParticipants = {
+      _id: objectIdParticipantsId,
+    };
+    const pullParticipants = await this.groupsModel.findOneAndUpdate(
+      { id: fileGroups.id },
+      { $pull: { participants: idParticipants._id } },
+      { new: true },
+    );
+    return pullParticipants;
+  }
   async getGroupsById(id: string): Promise<GroupRooms> {
     const result = await this.groupsModel.findById(id);
     return result;
@@ -34,8 +82,8 @@ export class GroupRoomsService implements IGroups {
     userCreate: UsersPromise,
     createGroupParams: CreateGroupParams,
   ): Promise<GroupRooms> {
-    const usersPromise = createGroupParams.participants.map((email) => {
-      return this.userService.findOneUsers({ email });
+    const usersPromise = createGroupParams.participants.map((phoneNumber) => {
+      return this.usersModel.findOne({ phoneNumber: phoneNumber });
     });
     // lộc các giá trị không hợp lệ
     const users = (await Promise.all(usersPromise)).filter((user) => {
@@ -44,13 +92,9 @@ export class GroupRoomsService implements IGroups {
     const createGroups = await this.groupsModel.create({
       creator: userCreate,
       participants: users,
+      nameGroups: createGroupParams.nameGroups,
     });
     const newGroups = await createGroups.save();
-    await this.usersModel.findOneAndUpdate(
-      { email: userCreate.email },
-      { $push: { groupRooms: newGroups } },
-      { new: true },
-    );
     return newGroups;
   }
 }

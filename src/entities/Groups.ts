@@ -15,5 +15,7 @@ export class GroupRooms {
   messages: Messages[];
   @Prop({ type: Object, default: '' })
   lastMessageSent: Messages;
+  @Prop({ type: String, default: '' })
+  avtGroups: string;
 }
 export const GroupRoomsSchema = SchemaFactory.createForClass(GroupRooms);

@@ -8,13 +8,9 @@ import { Rooms, RoomsSchema } from 'src/entities/Rooms';
 import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
 import { CloudinaryProvider } from 'src/cloudinary/cloudinary.provider';
 import { CloudinaryModule } from 'src/cloudinary/cloudinary.module';
-import { GroupRooms, GroupRoomsSchema } from 'src/entities/Groups';
 
 @Module({
   imports: [
-    MongooseModule.forFeature([
-      { name: GroupRooms.name, schema: GroupRoomsSchema },
-    ]),
     MongooseModule.forFeature([{ name: Rooms.name, schema: RoomsSchema }]),
     MongooseModule.forFeature([
       { name: Messages.name, schema: MessagesSchema },
