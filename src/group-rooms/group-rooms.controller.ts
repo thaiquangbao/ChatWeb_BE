@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Inject,
   Param,
@@ -61,17 +62,14 @@ export class GroupRoomsController {
       return res.send(error);
     }
   }
-  @Post('deleteGroups')
+  @Delete('deleteGroups/:id')
   async deleteGroups(
     @AuthUser() user: UsersPromise,
     @Res() res: Response,
-    @Body() groupMessages: GetMessagesGroupDTO,
+    @Param() id: string,
   ) {
     try {
-      const deleteGroups = await this.groupServices.deleteGroups(
-        user,
-        groupMessages.groupId,
-      );
+      const deleteGroups = await this.groupServices.deleteGroups(user, id);
       this.events.emit('delete.groups', deleteGroups);
       return res.send(deleteGroups);
     } catch (error) {
@@ -92,6 +90,26 @@ export class GroupRoomsController {
       );
       this.events.emit('leave.groups', leaveGroups);
       return res.send(leaveGroups);
+    } catch (error) {
+      console.log(error);
+      return res.send(error);
+    }
+  }
+  @Post('attendGroups/:id')
+  async attendGroups(
+    @AuthUser() user: UsersPromise,
+    @Res() res: Response,
+    @Body() groupMessages: GetMessagesGroupDTO,
+    @Param('id') id: string,
+  ) {
+    try {
+      const attendGroups = await this.groupServices.inviteToGroups(
+        user,
+        groupMessages.groupId,
+        id,
+      );
+      this.events.emit('attend.groups', attendGroups);
+      return res.send(attendGroups);
     } catch (error) {
       console.log(error);
       return res.send(error);

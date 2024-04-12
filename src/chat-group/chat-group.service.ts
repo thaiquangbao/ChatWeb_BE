@@ -376,7 +376,7 @@ export class ChatGroupService implements IMessageGroupsService {
       .populate('creator')
       .populate('participants');
     if (!groups) {
-      throw new HttpException('Room not exist', HttpStatus.BAD_REQUEST);
+      throw new HttpException('Group not exist', HttpStatus.BAD_REQUEST);
     }
     const { participants, creator } = groups;
     // if (creator.email !== user.email && recipient.email !== user.email) {

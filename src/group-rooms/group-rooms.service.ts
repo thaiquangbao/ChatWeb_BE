@@ -1,6 +1,6 @@
 import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { IGroups } from './group';
-import { CreateGroupParams } from 'src/untills/types';
+import { CreateGroupParams, SendFriendInvitations } from 'src/untills/types';
 import { UsersPromise } from 'src/auth/dtos/Users.dto';
 import { GroupRooms } from 'src/entities/Groups';
 import { InjectModel } from '@nestjs/mongoose';
@@ -16,6 +16,51 @@ export class GroupRoomsService implements IGroups {
     @InjectModel(GroupRooms.name) private groupsModel: Model<GroupRooms>,
     @Inject(Services.USERS) private readonly userService: IUserService,
   ) {}
+  async inviteToGroups(user: UsersPromise, idRooms: string, id: string) {
+    const objectIdGroupId = new mongoose.Types.ObjectId(idRooms);
+    const fileGroups = await this.groupsModel.findOne({
+      _id: objectIdGroupId,
+    });
+    if (!fileGroups) {
+      throw new HttpException('Not exist Groups', HttpStatus.BAD_REQUEST);
+    }
+    const objectIdParticipantsId = new mongoose.Types.ObjectId(user.id);
+    const fileOwnGroups = await this.groupsModel.findOne({
+      _id: fileGroups._id,
+      $or: [
+        { 'creator._id': objectIdParticipantsId },
+        { participants: { $elemMatch: { _id: objectIdParticipantsId } } },
+      ],
+    });
+    if (!fileOwnGroups) {
+      throw new HttpException(
+        'Bạn không phải thành viên trong nhóm',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+    const objectIdAttenderId = new mongoose.Types.ObjectId(id);
+    const fileAttenderGroups = await this.groupsModel.findOne({
+      _id: fileGroups._id,
+      $or: [
+        { 'creator._id': objectIdAttenderId },
+        { participants: { $elemMatch: { _id: objectIdAttenderId } } },
+      ],
+    });
+    if (fileAttenderGroups) {
+      throw new HttpException('Bạn đã có trong nhóm', HttpStatus.BAD_REQUEST);
+    }
+    const userAttend = await this.usersModel.findById(objectIdAttenderId);
+    const pushParticipants = await this.groupsModel.findByIdAndUpdate(
+      fileGroups._id,
+      { $push: { participants: userAttend } },
+      { new: true },
+    );
+    return {
+      userAttend: userAttend.email,
+      userAction: user.email,
+      groupsUpdate: pushParticipants,
+    };
+  }
   async deleteGroups(user: UsersPromise, idRooms: string) {
     const objectIdGroupId = new mongoose.Types.ObjectId(idRooms);
     const fileGroups = await this.groupsModel.findOne({
@@ -32,7 +77,8 @@ export class GroupRoomsService implements IGroups {
     if (!fileOwnGroups) {
       throw new HttpException('You Not Creator Rooms', HttpStatus.BAD_REQUEST);
     }
-    const deleteGroups = await this.groupsModel.findOneAndDelete(fileGroups.id);
+    const deleteGroups =
+      await this.groupsModel.findByIdAndDelete(objectIdGroupId);
     return deleteGroups;
   }
   async leaveGroups(user: UsersPromise, idRooms: string) {
@@ -57,12 +103,12 @@ export class GroupRoomsService implements IGroups {
     const idParticipants = {
       _id: objectIdParticipantsId,
     };
-    const pullParticipants = await this.groupsModel.findOneAndUpdate(
-      { id: fileGroups.id },
-      { $pull: { participants: idParticipants._id } },
+    const pullParticipants = await this.groupsModel.findByIdAndUpdate(
+      fileGroups._id,
+      { $pull: { participants: idParticipants } },
       { new: true },
     );
-    return pullParticipants;
+    return { userLeave: user.email, groupsUpdate: pullParticipants };
   }
   async getGroupsById(id: string): Promise<GroupRooms> {
     const result = await this.groupsModel.findById(id);

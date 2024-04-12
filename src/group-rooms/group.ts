@@ -11,4 +11,5 @@ export interface IGroups {
   getGroupsById(id: string): Promise<GroupRooms>;
   deleteGroups(user: UsersPromise, idRooms: string);
   leaveGroups(user: UsersPromise, idRooms: string);
+  inviteToGroups(user: UsersPromise, idRooms: string, id: string);
 }

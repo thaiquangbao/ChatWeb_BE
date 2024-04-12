@@ -325,4 +325,54 @@ export class MessagingGateway implements OnGatewayConnection {
       }
     });
   }
+  @OnEvent('delete.groups')
+  async handleGroupsDeleteEvent(payload: any) {
+    //console.log('Đã vào được chức năng tạo messages');
+    this.server.emit(`deleteGroups${payload.creator.email}`, payload);
+    payload.participants.forEach((participant) => {
+      if (payload.creator.email !== participant.email) {
+        return this.server.emit(`deleteGroups${participant.email}`, payload);
+      }
+    });
+  }
+  @OnEvent('leave.groups')
+  async handleGroupsLeaveEvent(payload: any) {
+    //console.log('Đã vào được chức năng tạo messages');
+    this.server.emit(`leaveGroups${payload.userLeave}`, payload);
+    payload.groupsUpdate.participants.forEach((participant) => {
+      if (payload.groupsUpdate.creator.email !== participant.email) {
+        return this.server.emit(`leaveGroups${participant.email}`, payload);
+      }
+    });
+    if (payload.userLeave !== payload.groupsUpdate.creator.email) {
+      return this.server.emit(
+        `leaveGroups${payload.groupsUpdate.creator.email}`,
+        payload,
+      );
+    }
+  }
+  @OnEvent('leave.groups')
+  async handleGroupsIdLeaveEvent(payload: any) {
+    //console.log('Đã vào được chức năng tạo messages');
+    this.server.emit(`leaveGroupsId${payload.groupsUpdate._id}`, payload);
+  }
+  @OnEvent('messagesGroups.create')
+  async handleMessagesGroupsCreateEvent(payload: any) {
+    this.server.emit(payload.groups._id, await payload);
+  }
+  @OnEvent('messagesGroups.create')
+  async handleMessagesGroupsEvent(payload: any) {
+    this.server.emit(
+      `createMessageGroups${payload.groups.creator.email}`,
+      payload,
+    );
+    payload.groups.participants.forEach((participant) => {
+      if (payload.groups.creator.email !== participant.email) {
+        return this.server.emit(
+          `createMessageGroups${participant.email}`,
+          payload,
+        );
+      }
+    });
+  }
 }
