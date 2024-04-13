@@ -9,3 +9,7 @@ export class CreateGroupsDto {
   creator: UsersPromise;
   nameGroups?: string;
 }
+export class InvitedGroupsDto {
+  participants: string[];
+  groupId: string;
+}

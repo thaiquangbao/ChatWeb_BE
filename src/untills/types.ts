@@ -136,3 +136,6 @@ export type CreateMessageRoomsResponse = {
   message: MessagesGroup;
   groups: GroupRooms;
 };
+export type AttendGroupParams = {
+  participants: string[];
+};

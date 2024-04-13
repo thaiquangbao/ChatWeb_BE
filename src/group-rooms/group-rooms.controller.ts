@@ -13,7 +13,7 @@ import { Routes, Services } from 'src/untills/constain';
 import { GroupRoomsService } from './group-rooms.service';
 import { AuthenticatedGuard } from 'src/auth/untills/Guards';
 import { UsersPromise } from 'src/auth/dtos/Users.dto';
-import { CreateGroupsDto } from './dtos/group.dto';
+import { CreateGroupsDto, InvitedGroupsDto } from './dtos/group.dto';
 import { AuthUser } from 'src/untills/decorater';
 import { Response } from 'express';
 import { GetMessagesGroupDTO } from 'src/chat-group/dtos/chat-group.dto';
@@ -95,18 +95,17 @@ export class GroupRoomsController {
       return res.send(error);
     }
   }
-  @Post('attendGroups/:id')
+  @Post('attendGroups')
   async attendGroups(
     @AuthUser() user: UsersPromise,
     @Res() res: Response,
-    @Body() groupMessages: GetMessagesGroupDTO,
-    @Param('id') id: string,
+    @Body() groupMessages: InvitedGroupsDto,
   ) {
     try {
       const attendGroups = await this.groupServices.inviteToGroups(
         user,
         groupMessages.groupId,
-        id,
+        groupMessages.participants,
       );
       this.events.emit('attend.groups', attendGroups);
       return res.send(attendGroups);

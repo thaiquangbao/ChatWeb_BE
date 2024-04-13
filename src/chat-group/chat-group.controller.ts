@@ -28,12 +28,17 @@ import {
   UpdateEmoji,
   UpdateGroupsMessages,
 } from 'src/untills/types';
+import { InjectModel } from '@nestjs/mongoose';
+import { MessagesGroup } from 'src/entities/MessagesGroup';
+import { Model } from 'mongoose';
 @Controller(Routes.CHATGROUPS)
 @UseGuards(AuthenticatedGuard)
 export class ChatGroupController {
   constructor(
     @Inject(Services.CHATGROUPS)
     private readonly chatGroupServices: IMessageGroupsService,
+    @InjectModel(MessagesGroup.name)
+    private readonly chatGroupModel: Model<MessagesGroup>,
     private readonly events: EventEmitter2,
     private readonly cloudinaryServices: CloudinaryService,
   ) {}
@@ -106,10 +111,13 @@ export class ChatGroupController {
         id,
         updateMessage,
       );
+      const messageGroupRecall = await this.chatGroupModel.findById(
+        updateMessage.idMessages,
+      );
       this.events.emit('messages-groups.recall', {
-        roomsUpdate: updateMessages,
+        groupsUpdate: updateMessages,
         email: user.email,
-        idMessages: updateMessage.idMessages,
+        messagesGroupUpdate: messageGroupRecall,
       });
       return updateMessages;
     } catch (error) {

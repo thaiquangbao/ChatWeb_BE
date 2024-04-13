@@ -11,12 +11,12 @@ import {
 import { Server } from 'socket.io';
 import { IRoomsService } from 'src/room/room';
 import { Services } from 'src/untills/constain';
-import { EventEmitter2 } from '@nestjs/event-emitter';
 import { IMessageService } from 'src/messages/messages';
 import { Model } from 'mongoose';
 import { Messages } from 'src/entities/Message';
 import { InjectModel } from '@nestjs/mongoose';
 import { User } from 'src/entities/users';
+import { MessagesGroup } from 'src/entities/MessagesGroup';
 @WebSocketGateway({
   cors: {
     origin: ['http://localhost:3000'],
@@ -31,7 +31,8 @@ export class MessagingGateway implements OnGatewayConnection {
     private readonly messagesService: IMessageService,
     @Inject(Services.ROOMS)
     private readonly roomsService: IRoomsService,
-    private readonly events: EventEmitter2,
+    @InjectModel(MessagesGroup.name)
+    private messageGroupsModel: Model<MessagesGroup>,
   ) {}
   handleConnection(client: any, ...args: any[]) {
     //console.log(client.id);
@@ -370,6 +371,90 @@ export class MessagingGateway implements OnGatewayConnection {
       if (payload.groups.creator.email !== participant.email) {
         return this.server.emit(
           `createMessageGroups${participant.email}`,
+          payload,
+        );
+      }
+    });
+  }
+  @OnEvent('messages-group.emoji')
+  async handleEmojiGroupsEvent(payload: any) {
+    const newMess = await this.messageGroupsModel.findById(payload.idMessages);
+    const dataMessages = {
+      idMessages: payload.idMessages,
+      messagesUpdate: newMess,
+      groupsUpdate: payload.groupsUpdate,
+    };
+    return this.server.emit(
+      `emojiGroup${payload.groupsUpdate._id}`,
+      dataMessages,
+    );
+  }
+  @OnEvent('messages-group.deleted')
+  async handleMessagesGroupsDeleteEvent(payload: any) {
+    this.server.emit(
+      `deleteMessageGroup${payload.groupsUpdate._id}`,
+      await payload,
+    );
+  }
+  @OnEvent('messages-group.deleted')
+  async handleLastMessagesGroupsDeleteEvent(payload: any) {
+    this.server.emit(
+      `deleteLastMessagesGroups${payload.groupsUpdate.creator.email}`,
+      await payload,
+    );
+    payload.groupsUpdate.participants.forEach((participant) => {
+      if (payload.groupsUpdate.creator.email !== participant.email) {
+        return this.server.emit(
+          `deleteLastMessagesGroups${participant.email}`,
+          payload,
+        );
+      }
+    });
+  }
+  @OnEvent('messages-groups.recall')
+  async handleMessagesGroupsRecallEvent(payload: any) {
+    this.server.emit(
+      `recallMessageGroup${payload.groupsUpdate._id}`,
+      await payload,
+    );
+  }
+  @OnEvent('messages-groups.recall')
+  async handleLastMessagesGroupsRecallEvent(payload: any) {
+    this.server.emit(
+      `recallLastMessagesGroups${payload.groupsUpdate.creator.email}`,
+      await payload,
+    );
+    payload.groupsUpdate.participants.forEach((participant) => {
+      if (payload.groupsUpdate.creator.email !== participant.email) {
+        return this.server.emit(
+          `recallLastMessagesGroups${participant.email}`,
+          payload,
+        );
+      }
+    });
+  }
+  @OnEvent('attend.groups')
+  async handleAttendGroupsEvent(payload: any) {
+    this.server.emit(`attendGroup${payload.groupsUpdate._id}`, await payload);
+  }
+  @OnEvent('attend.groups')
+  async handleAttendGroupsMessagesEvent(payload: any) {
+    this.server.emit(
+      `attendMessagesGroup${payload.groupsUpdate.creator.email}`,
+      await payload,
+    );
+    payload.groupsUpdate.participants.forEach((participant) => {
+      if (payload.groupsUpdate.creator.email !== participant.email) {
+        return this.server.emit(
+          `attendMessagesGroup${participant.email}`,
+          payload,
+        );
+      }
+    });
+    payload.userAttends.forEach((participant) => {
+      if (payload.groupsUpdate.creator.email !== participant.email) {
+        return this.server.emit(
+          `attendMessagesGroupsss${participant.email}`,
           payload,
         );
       }

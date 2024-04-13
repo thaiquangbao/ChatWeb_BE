@@ -1,6 +1,6 @@
 import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { IGroups } from './group';
-import { CreateGroupParams, SendFriendInvitations } from 'src/untills/types';
+import { CreateGroupParams } from 'src/untills/types';
 import { UsersPromise } from 'src/auth/dtos/Users.dto';
 import { GroupRooms } from 'src/entities/Groups';
 import { InjectModel } from '@nestjs/mongoose';
@@ -16,7 +16,11 @@ export class GroupRoomsService implements IGroups {
     @InjectModel(GroupRooms.name) private groupsModel: Model<GroupRooms>,
     @Inject(Services.USERS) private readonly userService: IUserService,
   ) {}
-  async inviteToGroups(user: UsersPromise, idRooms: string, id: string) {
+  async inviteToGroups(
+    user: UsersPromise,
+    idRooms: string,
+    participants: string[],
+  ) {
     const objectIdGroupId = new mongoose.Types.ObjectId(idRooms);
     const fileGroups = await this.groupsModel.findOne({
       _id: objectIdGroupId,
@@ -38,25 +42,21 @@ export class GroupRoomsService implements IGroups {
         HttpStatus.BAD_REQUEST,
       );
     }
-    const objectIdAttenderId = new mongoose.Types.ObjectId(id);
-    const fileAttenderGroups = await this.groupsModel.findOne({
-      _id: fileGroups._id,
-      $or: [
-        { 'creator._id': objectIdAttenderId },
-        { participants: { $elemMatch: { _id: objectIdAttenderId } } },
-      ],
+    const userAttendGroups = participants.map((phoneNumber) => {
+      return this.usersModel.findOne({ phoneNumber: phoneNumber });
     });
-    if (fileAttenderGroups) {
-      throw new HttpException('Bạn đã có trong nhóm', HttpStatus.BAD_REQUEST);
-    }
-    const userAttend = await this.usersModel.findById(objectIdAttenderId);
+    const usersPromise = (await Promise.all(userAttendGroups)).filter(
+      (user) => {
+        return user;
+      },
+    );
     const pushParticipants = await this.groupsModel.findByIdAndUpdate(
       fileGroups._id,
-      { $push: { participants: userAttend } },
+      { $push: { participants: { $each: usersPromise } } },
       { new: true },
     );
     return {
-      userAttend: userAttend.email,
+      userAttends: usersPromise,
       userAction: user.email,
       groupsUpdate: pushParticipants,
     };
