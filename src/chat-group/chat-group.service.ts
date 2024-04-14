@@ -133,7 +133,7 @@ export class ChatGroupService implements IMessageGroupsService {
       .populate('creator')
       .populate('participants');
     if (!groups) {
-      throw new HttpException('Room not exist', HttpStatus.BAD_REQUEST);
+      throw new HttpException('Groups not exist', HttpStatus.BAD_REQUEST);
     }
     const objectIdMessageGroupId = new mongoose.Types.ObjectId(idMessages);
     const findMessagesFeedBack = await this.messageGroupsModel.findById(
@@ -233,7 +233,7 @@ export class ChatGroupService implements IMessageGroupsService {
 
     const updateMessage = await this.messageGroupsModel.updateOne(
       { _id: findGroupMessages._id },
-      { content: '' },
+      { content: '', answerMessage: {} },
       { new: true },
     );
     if (!updateMessage) {

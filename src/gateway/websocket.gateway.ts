@@ -460,4 +460,23 @@ export class MessagingGateway implements OnGatewayConnection {
       }
     });
   }
+  @OnEvent('messagesGroups.createWithFeedBack')
+  async handleMessagesGroupsCreateWithFeedBackEvent(payload: any) {
+    this.server.emit(`feedBackGroup${payload.groups._id}`, await payload);
+  }
+  @OnEvent('messagesGroups.createWithFeedBack')
+  async handleMessagesGroupsWithFeedBackEvent(payload: any) {
+    this.server.emit(
+      `feedBackLastMessagesGroup${payload.groups.creator.email}`,
+      payload,
+    );
+    payload.groups.participants.forEach((participant) => {
+      if (payload.groups.creator.email !== participant.email) {
+        return this.server.emit(
+          `feedBackLastMessagesGroup${participant.email}`,
+          payload,
+        );
+      }
+    });
+  }
 }
