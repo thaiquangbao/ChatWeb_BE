@@ -13,7 +13,12 @@ import { Routes, Services } from 'src/untills/constain';
 import { GroupRoomsService } from './group-rooms.service';
 import { AuthenticatedGuard } from 'src/auth/untills/Guards';
 import { UsersPromise } from 'src/auth/dtos/Users.dto';
-import { CreateGroupsDto, InvitedGroupsDto } from './dtos/group.dto';
+import {
+  CreateGroupsDto,
+  InvitedGroupsDto,
+  KickUser,
+  UpdateGroupsRooms,
+} from './dtos/group.dto';
 import { AuthUser } from 'src/untills/decorater';
 import { Response } from 'express';
 import { GetMessagesGroupDTO } from 'src/chat-group/dtos/chat-group.dto';
@@ -109,6 +114,39 @@ export class GroupRoomsController {
       );
       this.events.emit('attend.groups', attendGroups);
       return res.send(attendGroups);
+    } catch (error) {
+      console.log(error);
+      return res.send(error);
+    }
+  }
+  @Post('updateGroups')
+  async updateGroups(
+    @AuthUser() user: UsersPromise,
+    @Body() updateGroupsRooms: UpdateGroupsRooms,
+    @Res() res: Response,
+  ) {
+    try {
+      const result = await this.groupServices.updateGroups(
+        user,
+        updateGroupsRooms,
+      );
+      this.events.emit('update.groups', result);
+      return res.send(result);
+    } catch (error) {
+      console.log(error);
+      return res.send(error);
+    }
+  }
+  @Post('kickUsersGroups')
+  async kickGroups(
+    @AuthUser() user: UsersPromise,
+    @Res() res: Response,
+    @Body() userKick: KickUser,
+  ) {
+    try {
+      const kickGroups = await this.groupServices.kickGroups(user, userKick);
+      this.events.emit('kick-users.groups', kickGroups);
+      return res.send(kickGroups);
     } catch (error) {
       console.log(error);
       return res.send(error);

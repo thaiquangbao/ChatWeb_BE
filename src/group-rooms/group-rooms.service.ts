@@ -1,6 +1,6 @@
 import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { IGroups } from './group';
-import { CreateGroupParams } from 'src/untills/types';
+import { CreateGroupParams, KickGroups, UpdateGroups } from 'src/untills/types';
 import { UsersPromise } from 'src/auth/dtos/Users.dto';
 import { GroupRooms } from 'src/entities/Groups';
 import { InjectModel } from '@nestjs/mongoose';
@@ -16,6 +16,79 @@ export class GroupRoomsService implements IGroups {
     @InjectModel(GroupRooms.name) private groupsModel: Model<GroupRooms>,
     @Inject(Services.USERS) private readonly userService: IUserService,
   ) {}
+  async kickGroups(userAction: UsersPromise, kickGroups: KickGroups) {
+    const { idGroups, idUserKick } = kickGroups;
+    const objectIdGroupId = new mongoose.Types.ObjectId(idGroups);
+    const existGroups = await this.groupsModel.findById(objectIdGroupId);
+    if (!existGroups) {
+      throw new HttpException('Groups not exist', HttpStatus.BAD_REQUEST);
+    }
+    const objectIdCreatorId = new mongoose.Types.ObjectId(userAction.id);
+    const fileOwnGroups = await this.groupsModel.findOne({
+      _id: existGroups._id,
+      'creator._id': objectIdCreatorId,
+    });
+    if (!fileOwnGroups) {
+      throw new HttpException('You Not Creator Rooms', HttpStatus.BAD_REQUEST);
+    }
+    const objectIdAttendId = new mongoose.Types.ObjectId(idUserKick);
+    const findAttendGroups = await this.groupsModel.findOne({
+      _id: existGroups._id,
+      participants: { $elemMatch: { _id: objectIdAttendId } },
+    });
+    if (!findAttendGroups) {
+      throw new HttpException('User is not in Groups', HttpStatus.BAD_REQUEST);
+    }
+    const userKicked = {
+      _id: objectIdAttendId,
+    };
+    const pullParticipants = await this.groupsModel.findByIdAndUpdate(
+      existGroups._id,
+      { $pull: { participants: userKicked } },
+      { new: true },
+    );
+    const findUserKick = await this.usersModel.findById(objectIdAttendId);
+    return {
+      userAction: userAction.email,
+      userKicked: findUserKick.email,
+      groupsUpdate: pullParticipants,
+    };
+  }
+  async updateGroups(
+    user: UsersPromise,
+    updateGroups: UpdateGroups,
+  ): Promise<GroupRooms> {
+    const { idGroups, nameGroups, avtGroups } = updateGroups;
+    const objectIdGroupId = new mongoose.Types.ObjectId(idGroups);
+    const existGroups = await this.groupsModel.findById(objectIdGroupId);
+    if (!existGroups) {
+      throw new HttpException('Groups not exist', HttpStatus.BAD_REQUEST);
+    }
+    const objectIdUserAction = new mongoose.Types.ObjectId(user.id);
+    const fileOwnGroups = await this.groupsModel.findOne({
+      _id: existGroups._id,
+      $or: [
+        { 'creator._id': objectIdUserAction },
+        { participants: { $elemMatch: { _id: objectIdUserAction } } },
+      ],
+    });
+    if (!fileOwnGroups) {
+      throw new HttpException(
+        'Bạn không phải thành viên trong nhóm',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+    const updateGroupsUser = await this.groupsModel.updateOne(
+      { _id: existGroups._id },
+      { nameGroups: nameGroups, avtGroups: avtGroups },
+      { new: true },
+    );
+    if (updateGroupsUser.modifiedCount <= 0) {
+      throw new HttpException('Không thể cập nhật Groups', HttpStatus.CONFLICT);
+    }
+    const result = await this.groupsModel.findById(existGroups._id);
+    return result;
+  }
   async inviteToGroups(
     user: UsersPromise,
     idRooms: string,
@@ -139,6 +212,8 @@ export class GroupRoomsService implements IGroups {
       creator: userCreate,
       participants: users,
       nameGroups: createGroupParams.nameGroups,
+      avtGroups:
+        'https://www.pngall.com/wp-content/uploads/9/Society-PNG-Pic.png',
     });
     const newGroups = await createGroups.save();
     return newGroups;

@@ -220,12 +220,12 @@ export class MessagingGateway implements OnGatewayConnection {
   async handleAddFriendGroup(payload: any) {
     this.server.emit(
       `updateAcceptFriendsGroups${payload.userSend.email}`,
-      await payload.userAccept,
+      await payload.roomsUpdateMessage,
     );
     if (payload.userSend.email !== payload.userAccept.email) {
       return this.server.emit(
         `updateAcceptFriendsGroups${payload.userAccept.email}`,
-        await payload.userSend,
+        await payload.roomsUpdateMessage,
       );
     }
   }
@@ -262,12 +262,12 @@ export class MessagingGateway implements OnGatewayConnection {
   async handleDeleteUnfriendsGroups(payload: any) {
     this.server.emit(
       `updateUnFriendsGroups${payload.userActions.email}`,
-      await payload.userAccept,
+      await payload,
     );
     if (payload.userActions.email !== payload.userAccept.email) {
       return this.server.emit(
         `updateUnFriendsGroups${payload.userAccept.email}`,
-        await payload.userActions,
+        await payload,
       );
     }
   }
@@ -476,6 +476,42 @@ export class MessagingGateway implements OnGatewayConnection {
           `feedBackLastMessagesGroup${participant.email}`,
           payload,
         );
+      }
+    });
+  }
+  @OnEvent('update.groups')
+  async handleUpdateGroups(payload: any) {
+    this.server.emit(`updateGroup${payload._id}`, await payload);
+  }
+  @OnEvent('update.groups')
+  async handleUpdateUserGroups(payload: any) {
+    this.server.emit(
+      `updateAttendGroup${payload.creator.email}`,
+      await payload,
+    );
+    payload.participants.forEach((participant) => {
+      if (payload.creator.email !== participant.email) {
+        return this.server.emit(
+          `updateAttendGroup${participant.email}`,
+          payload,
+        );
+      }
+    });
+  }
+  @OnEvent('kick-users.groups')
+  async handleKickGroups(payload: any) {
+    this.server.emit(`kickOutGroup${payload.groupsUpdate._id}`, await payload);
+  }
+  @OnEvent('kick-users.groups')
+  async handleKickUserGroups(payload: any) {
+    this.server.emit(
+      `updateKickGroup${payload.groupsUpdate.creator.email}`,
+      await payload,
+    );
+    this.server.emit(`updateKickGroup${payload.userKicked}`, await payload);
+    payload.groupsUpdate.participants.forEach((participant) => {
+      if (payload.groupsUpdate.creator.email !== participant.email) {
+        return this.server.emit(`updateKickGroup${participant.email}`, payload);
       }
     });
   }

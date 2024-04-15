@@ -122,6 +122,7 @@ export interface AnswerMessagesGroups {
 export type CreateGroupParams = {
   participants: string[];
   nameGroups?: string;
+  avtGroups?: string;
 };
 export type FetchGroupParams = {
   idGroups: string;
@@ -138,4 +139,13 @@ export type CreateMessageRoomsResponse = {
 };
 export type AttendGroupParams = {
   participants: string[];
+};
+export type UpdateGroups = {
+  idGroups: string;
+  nameGroups: string;
+  avtGroups: string;
+};
+export type KickGroups = {
+  idGroups: string;
+  idUserKick: string;
 };
