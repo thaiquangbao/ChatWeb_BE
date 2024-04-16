@@ -142,8 +142,8 @@ export type AttendGroupParams = {
 };
 export type UpdateGroups = {
   idGroups: string;
-  nameGroups: string;
-  avtGroups: string;
+  nameGroups?: string;
+  avtGroups?: string;
 };
 export type KickGroups = {
   idGroups: string;

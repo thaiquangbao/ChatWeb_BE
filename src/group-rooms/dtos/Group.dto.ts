@@ -16,8 +16,8 @@ export class InvitedGroupsDto {
 }
 export class UpdateGroupsRooms {
   idGroups: string;
-  nameGroups: string;
-  avtGroups: string;
+  nameGroups?: string;
+  avtGroups?: string;
 }
 export class KickUser {
   idGroups: string;
