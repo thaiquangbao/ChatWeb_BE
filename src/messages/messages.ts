@@ -1,14 +1,14 @@
 import { Messages } from 'src/entities/Message';
 import {
-  CreateMessageGroupParams,
+  AnswerMessagesSingle,
   CreateMessageParams,
   CreateMessageResponse,
-  CreateMessageRoomsResponse,
   DeleteMessages,
   UpdateEmoji,
   UpdateMessages,
 } from 'src/untills/types';
 import { MessagesRoomsUpdate } from './dto/Messages.dto';
+import { UsersPromise } from 'src/auth/dtos/Users.dto';
 
 export interface IMessageService {
   createMessages(
@@ -25,4 +25,9 @@ export interface IMessageService {
     id: string,
     updateEmoji: UpdateEmoji,
   ): Promise<MessagesRoomsUpdate>;
+  feedbackMessagesSingle(
+    id: string,
+    answerMessages: AnswerMessagesSingle,
+    user: UsersPromise,
+  );
 }

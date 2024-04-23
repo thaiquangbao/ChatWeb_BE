@@ -3,7 +3,6 @@ import {
   Controller,
   Inject,
   Param,
-  Patch,
   Post,
   Res,
   UseGuards,
@@ -98,6 +97,59 @@ export class FriendsController {
       return res.send(undoFriends).status(200);
     } catch (error) {
       return res.send(error);
+    }
+  }
+  @Post('acceptUser')
+  async acceptFriendsCR(
+    @Body() friend: IdWantMakeFriend,
+    @AuthUser() userAuth: UsersPromise,
+    @Res() res: Response,
+  ) {
+    try {
+      const accepted = await this.friendsService.acceptFriendsCR(
+        friend.id,
+        userAuth.id,
+      );
+      this.events.emit('acceptUser.friends', accepted);
+      return res.status(200).send(accepted);
+    } catch (error) {
+      return res.status(400).send(error);
+    }
+  }
+
+  @Post('unfriendUser')
+  async unfriendsCR(
+    @Body() friend: IdWantMakeFriend,
+    @AuthUser() userAuth: UsersPromise,
+    @Res() res: Response,
+  ) {
+    try {
+      const unfriend = await this.friendsService.unfriendsCR(
+        friend.id,
+        userAuth.id,
+      );
+      this.events.emit('unfriendUser.friends', unfriend);
+      return res.status(200).send(unfriend);
+    } catch (error) {
+      return res.status(400).send(error);
+    }
+  }
+
+  @Post('undoUser')
+  async undoFriendsCR(
+    @Body() friend: IdWantMakeFriend,
+    @AuthUser() userAuth: UsersPromise,
+    @Res() res: Response,
+  ) {
+    try {
+      const undoUser = await this.friendsService.undoFriendsCR(
+        friend.id,
+        userAuth.id,
+      );
+      this.events.emit('undoUser.friends', undoUser);
+      return res.status(200).send(undoUser);
+    } catch (error) {
+      return res.status(400).send(error);
     }
   }
 }

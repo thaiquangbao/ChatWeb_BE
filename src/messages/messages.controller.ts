@@ -20,7 +20,12 @@ import { AuthUser } from 'src/untills/decorater';
 import { UsersPromise } from 'src/auth/dtos/Users.dto';
 import { Response } from 'express';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { DeleteMessages, UpdateEmoji, UpdateMessages } from 'src/untills/types';
+import {
+  AnswerMessagesSingle,
+  DeleteMessages,
+  UpdateEmoji,
+  UpdateMessages,
+} from 'src/untills/types';
 import { AuthenticatedGuard } from 'src/auth/untills/Guards';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
@@ -148,6 +153,25 @@ export class MessagesController {
       );
       this.events.emit('messages.emoji', updateEmoji);
       return res.send(updateEmoji);
+    } catch (error) {
+      return res.send(error);
+    }
+  }
+  @Post('feedBackMessages/:id')
+  async createMessageWithFeedBack(
+    @AuthUser() user: UsersPromise,
+    @Param('id') id: string,
+    @Body() createMessagesRoomsDTO: AnswerMessagesSingle,
+    @Res() res: Response,
+  ) {
+    try {
+      const messages = await this.messageServices.feedbackMessagesSingle(
+        id,
+        createMessagesRoomsDTO,
+        user,
+      );
+      this.events.emit('messagesRooms.createWithFeedBack', messages);
+      return res.send(messages).status(HttpStatus.OK);
     } catch (error) {
       return res.send(error);
     }

@@ -15,6 +15,7 @@ import { AuthenticatedGuard } from 'src/auth/untills/Guards';
 import { UsersPromise } from 'src/auth/dtos/Users.dto';
 import {
   CreateGroupsDto,
+  Franchiser,
   InvitedGroupsDto,
   KickUser,
   UpdateGroupsRooms,
@@ -147,6 +148,25 @@ export class GroupRoomsController {
       const kickGroups = await this.groupServices.kickGroups(user, userKick);
       this.events.emit('kick-users.groups', kickGroups);
       return res.send(kickGroups);
+    } catch (error) {
+      console.log(error);
+      return res.send(error);
+    }
+  }
+  @Post('franchiseUsersGroups')
+  async franchiseGroups(
+    @AuthUser() user: UsersPromise,
+    @Res() res: Response,
+    @Body() franchiser: Franchiser,
+  ) {
+    console.log(franchiser);
+    try {
+      const franchiseGroups = await this.groupServices.franchiseLeader(
+        user,
+        franchiser,
+      );
+      this.events.emit('franchise.groups', franchiseGroups);
+      return res.send(franchiseGroups);
     } catch (error) {
       console.log(error);
       return res.send(error);

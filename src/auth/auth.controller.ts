@@ -112,7 +112,7 @@ export class AuthController {
   @Post('logout')
   @UseGuards(AuthenticatedGuard)
   logout(@Req() req: AuthenticatedRequest, @Res() res: Response) {
-    // this.events.emit('offline.user');
+    this.events.emit('offline.user', req.user);
     req.logout((err: any) => {
       return err ? res.send(400) : res.send(200);
     });

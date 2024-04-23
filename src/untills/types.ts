@@ -4,6 +4,7 @@ import { Rooms } from 'src/entities/Rooms';
 import { Request } from 'express';
 import { GroupRooms } from 'src/entities/Groups';
 import { MessagesGroup } from 'src/entities/MessagesGroup';
+import { User } from 'src/entities/users';
 export type CreateUserDetails = {
   fullName: string;
   phoneNumber: string;
@@ -34,7 +35,14 @@ export type ValidCode = {
   avatar: string;
   code: string;
 };
-
+export type ListRooms = {
+  id: string;
+  recipient: User;
+  creator: User;
+  messages: Messages[];
+  lastMessageSent: Messages;
+  friend: boolean;
+};
 export type CreateRoomsParams = {
   email: string;
   message: string;
@@ -149,3 +157,14 @@ export type KickGroups = {
   idGroups: string;
   idUserKick: string;
 };
+export type Franchiser = {
+  idGroups: string;
+  idUserFranchise: string;
+};
+export interface AnswerMessagesSingle {
+  content: string;
+  idMessages: string;
+}
+// export interface onlineUser {
+//   userOnline: string[];
+// }

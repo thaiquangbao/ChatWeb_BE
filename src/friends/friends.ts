@@ -21,4 +21,7 @@ export interface IFriendsService {
     myId: string,
     idRooms: string,
   ): Promise<DeleteFriendDto>;
+  acceptFriendsCR(id: string, myId: string): Promise<AcceptFriendDto>;
+  unfriendsCR(id: string, myId: string): Promise<DeleteFriendDto>;
+  undoFriendsCR(id: string, myId: string): Promise<DeleteFriendDto>;
 }

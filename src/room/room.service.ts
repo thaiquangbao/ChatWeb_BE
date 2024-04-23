@@ -5,7 +5,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Rooms } from '../entities/Rooms';
 import { Model } from 'mongoose';
 import { UsersPromise } from '../auth/dtos/Users.dto';
-import { CreateRoomsParams, FindRooms } from '../untills/types';
+import { CreateRoomsParams, ListRooms } from '../untills/types';
 import { IUserService } from '../users/users';
 import { Services } from '../untills/constain';
 import { User } from '../entities/users';
@@ -20,6 +20,61 @@ export class RoomService implements IRoomsService {
     @InjectModel(User.name) private usersModel: Model<User>,
     @InjectModel(Messages.name) private messagesModel: Model<Messages>,
   ) {}
+  async offline(email: string): Promise<ListRooms[]> {
+    try {
+      const user = await this.usersModel.findOne({ email: email });
+      await this.roomsModel.updateMany(
+        {
+          'creator.email': user.email,
+        },
+        { $set: { 'creator.online': false } },
+      );
+      await this.roomsModel.updateMany(
+        {
+          'recipient.email': user.email,
+        },
+        { $set: { 'recipient.online': false } },
+      );
+      await this.usersModel.updateOne({ email: user.email }, { online: false });
+      const findOffline: ListRooms[] = await this.roomsModel.find({
+        $or: [
+          { 'recipient.email': user.email },
+          { 'creator.email': user.email },
+        ],
+      });
+      return findOffline;
+    } catch (error) {
+      console.log(error);
+      return error;
+    }
+  }
+  async online(user: UsersPromise): Promise<ListRooms[]> {
+    try {
+      await this.roomsModel.updateMany(
+        {
+          'creator.email': user.email,
+        },
+        { $set: { 'creator.online': true } },
+      );
+      await this.roomsModel.updateMany(
+        {
+          'recipient.email': user.email,
+        },
+        { $set: { 'recipient.online': true } },
+      );
+      await this.usersModel.updateOne({ email: user.email }, { online: true });
+      const findOnline: ListRooms[] = await this.roomsModel.find({
+        $or: [
+          { 'recipient.email': user.email },
+          { 'creator.email': user.email },
+        ],
+      });
+      return findOnline;
+    } catch (error) {
+      console.log(error);
+      return error;
+    }
+  }
   async deleteRooms(roomsId: string) {
     const findRooms = await this.roomsModel.findById(roomsId);
     if (!findRooms) {

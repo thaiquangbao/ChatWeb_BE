@@ -4,6 +4,7 @@ import { Messages } from 'src/entities/Message';
 import { InjectModel } from '@nestjs/mongoose';
 import mongoose, { Model } from 'mongoose';
 import {
+  AnswerMessagesSingle,
   CreateMessageParams,
   CreateMessageResponse,
   DeleteMessages,
@@ -13,6 +14,7 @@ import {
 import { Rooms } from 'src/entities/Rooms';
 import { RoomsPromise } from 'src/room/dto/RoomDTO.dto';
 import { MessagesRoomsUpdate } from './dto/Messages.dto';
+import { UsersPromise } from 'src/auth/dtos/Users.dto';
 
 @Injectable()
 export class MessagesService implements IMessageService {
@@ -20,6 +22,91 @@ export class MessagesService implements IMessageService {
     @InjectModel(Messages.name) private readonly messagesModel: Model<Messages>,
     @InjectModel(Rooms.name) private roomsModel: Model<Rooms>,
   ) {}
+  async feedbackMessagesSingle(
+    id: string,
+    answerMessages: AnswerMessagesSingle,
+    user: UsersPromise,
+  ) {
+    const { content, idMessages } = answerMessages;
+    const objectIdRoomId = new mongoose.Types.ObjectId(id);
+    const rooms = await this.roomsModel
+      .findOne({ _id: objectIdRoomId })
+      .populate('creator')
+      .populate('recipient');
+    if (!rooms) {
+      throw new HttpException('Rooms not exist', HttpStatus.BAD_REQUEST);
+    }
+    const objectIdMessageRoomsId = new mongoose.Types.ObjectId(idMessages);
+    const findMessagesFeedBack = await this.messagesModel.findById(
+      objectIdMessageRoomsId,
+    );
+    if (!findMessagesFeedBack) {
+      throw new HttpException(
+        'Messages feedback not exist',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+    const { recipient, creator } = rooms;
+    const exists = recipient.email === user.email;
+    if (creator.email !== user.email && !exists) {
+      throw new HttpException('Not create Messages', HttpStatus.BAD_REQUEST);
+    }
+    const newMessage = await this.messagesModel.create({
+      content: content,
+      rooms: rooms,
+      author: user,
+      answerMessage: {
+        author: findMessagesFeedBack.author.email,
+        content: findMessagesFeedBack.content,
+        idMessages: findMessagesFeedBack._id,
+        fullName: findMessagesFeedBack.author.fullName,
+      },
+    });
+    const messageSave = await newMessage.save();
+    const dataMessage = {
+      _id: messageSave._id,
+      content: messageSave.content,
+      emoji: messageSave.emoji,
+      author: messageSave.author.fullName,
+      email: messageSave.author.email,
+      answerMessage: {
+        author: findMessagesFeedBack.author.email,
+        content: findMessagesFeedBack.content,
+        idMessages: findMessagesFeedBack._id,
+        fullName: findMessagesFeedBack.author.fullName,
+      },
+      createdAt: new Date(),
+    };
+    const dataAuth = {
+      email: messageSave.author.email,
+      fullName: messageSave.author.fullName,
+    };
+    //rooms.lastMessageSent = messageSave;
+    const dataLastMessages = {
+      _id: messageSave._id,
+      content: messageSave.content,
+      emoji: messageSave.emoji,
+      author: dataAuth,
+      answerMessage: {
+        author: findMessagesFeedBack.author.email,
+        content: findMessagesFeedBack.content,
+        idMessages: findMessagesFeedBack._id,
+        fullName: findMessagesFeedBack.author.fullName,
+      },
+      createdAt: new Date(),
+    };
+    // Cập nhật lại lastMessage vào phòng chat bỏ id messges vào trong đó
+    const updated = await this.roomsModel.findOneAndUpdate(
+      { _id: rooms._id },
+      {
+        $set: { lastMessageSent: dataLastMessages },
+        $push: { messages: dataMessage },
+      },
+      { new: true },
+    );
+    //return messageSave;
+    return { message: messageSave, rooms: updated };
+  }
   async iconOnMessages(
     id: string,
     updateEmoji: UpdateEmoji,

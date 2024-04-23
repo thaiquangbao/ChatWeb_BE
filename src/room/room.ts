@@ -1,4 +1,4 @@
-import { CreateRoomsParams } from '../untills/types';
+import { CreateRoomsParams, ListRooms } from '../untills/types';
 import { UsersPromise } from 'src/auth/dtos/Users.dto';
 import { Rooms } from 'src/entities/Rooms';
 // import { RoomsPromise } from './dto/RoomDTO.dto';
@@ -13,6 +13,8 @@ export interface IRoomsService {
   // hasAccess(params: AccessParams): Promise<boolean>;
   isCreated(userId: string, recipientId: string): Promise<Rooms | undefined>;
   deleteRooms(roomsId: string);
+  online(user: UsersPromise): Promise<ListRooms[]>;
+  offline(email: string): Promise<ListRooms[]>;
   // save(rooms: RoomsPromise): Promise<RoomsPromise>;
   // getMessages(params: GetConversationMessagesParams): Promise<RoomsPromise>;
   //update(params: UpdateConversationParams);

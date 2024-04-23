@@ -23,3 +23,7 @@ export class KickUser {
   idGroups: string;
   idUserKick: string;
 }
+export class Franchiser {
+  idGroups: string;
+  idUserFranchise: string;
+}

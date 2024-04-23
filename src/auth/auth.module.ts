@@ -17,11 +17,15 @@ import { MessagesModule } from 'src/messages/messages.module';
 import { RoomModule } from 'src/room/room.module';
 import { Rooms, RoomsSchema } from 'src/entities/Rooms';
 import { Messages, MessagesSchema } from 'src/entities/Message';
+import { UserOnline, UserOnlineSchema } from 'src/entities/UserOnline';
 
 @Module({
   imports: [
     UsersModule,
     MongooseModule.forFeature([{ name: User.name, schema: UsersSchema }]),
+    MongooseModule.forFeature([
+      { name: UserOnline.name, schema: UserOnlineSchema },
+    ]),
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       inject: [ConfigService],

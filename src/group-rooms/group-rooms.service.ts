@@ -1,6 +1,11 @@
 import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { IGroups } from './group';
-import { CreateGroupParams, KickGroups, UpdateGroups } from 'src/untills/types';
+import {
+  CreateGroupParams,
+  Franchiser,
+  KickGroups,
+  UpdateGroups,
+} from 'src/untills/types';
 import { UsersPromise } from 'src/auth/dtos/Users.dto';
 import { GroupRooms } from 'src/entities/Groups';
 import { InjectModel } from '@nestjs/mongoose';
@@ -16,6 +21,69 @@ export class GroupRoomsService implements IGroups {
     @InjectModel(GroupRooms.name) private groupsModel: Model<GroupRooms>,
     @Inject(Services.USERS) private readonly userService: IUserService,
   ) {}
+  async franchiseLeader(userAction: UsersPromise, franchiser: Franchiser) {
+    const { idGroups, idUserFranchise } = franchiser;
+    const objectIdGroupId = new mongoose.Types.ObjectId(idGroups);
+    const existGroups = await this.groupsModel.findById(objectIdGroupId);
+    if (!existGroups) {
+      throw new HttpException('Groups not exist', HttpStatus.BAD_REQUEST);
+    }
+    const objectIdCreatorId = new mongoose.Types.ObjectId(userAction.id);
+    const fileOwnGroups = await this.groupsModel.findOne({
+      _id: existGroups._id,
+      'creator._id': objectIdCreatorId,
+    });
+    if (!fileOwnGroups) {
+      throw new HttpException('You Not Creator Rooms', HttpStatus.BAD_REQUEST);
+    }
+    const objectIdAttendId = new mongoose.Types.ObjectId(idUserFranchise);
+    const findAttendGroups = await this.groupsModel.findOne({
+      _id: existGroups._id,
+      participants: { $elemMatch: { _id: objectIdAttendId } },
+    });
+    if (!findAttendGroups) {
+      throw new HttpException('User is not in Groups', HttpStatus.BAD_REQUEST);
+    }
+    const userFranchise = {
+      _id: objectIdAttendId,
+    };
+    const findCreatorNew = await this.usersModel.findById(objectIdAttendId);
+    const updateCreator = { creator: findCreatorNew };
+    const newCreator = await this.groupsModel.updateOne(
+      { _id: existGroups._id },
+      { creator: updateCreator.creator },
+    );
+    if (newCreator.modifiedCount <= 0) {
+      throw new HttpException(
+        'Updates creator not success',
+        HttpStatus.CONFLICT,
+      );
+    }
+    const pullParticipants = await this.groupsModel.updateOne(
+      { _id: existGroups._id },
+      {
+        $pull: { participants: userFranchise },
+      },
+    );
+    if (pullParticipants.modifiedCount <= 0) {
+      throw new HttpException(
+        'Updates participants not success',
+        HttpStatus.CONFLICT,
+      );
+    }
+    const updateParticipants = await this.groupsModel.findByIdAndUpdate(
+      existGroups._id,
+      {
+        $push: { participants: fileOwnGroups.creator },
+      },
+      { new: true },
+    );
+    return {
+      userCreatorNew: findCreatorNew.email,
+      userAction: fileOwnGroups.creator.email,
+      groupsUpdate: updateParticipants,
+    };
+  }
   async kickGroups(userAction: UsersPromise, kickGroups: KickGroups) {
     const { idGroups, idUserKick } = kickGroups;
     const objectIdGroupId = new mongoose.Types.ObjectId(idGroups);

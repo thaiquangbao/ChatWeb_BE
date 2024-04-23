@@ -4,6 +4,7 @@ import {
   ConnectedSocket,
   MessageBody,
   OnGatewayConnection,
+  OnGatewayDisconnect,
   SubscribeMessage,
   WebSocketGateway,
   WebSocketServer,
@@ -17,13 +18,16 @@ import { Messages } from 'src/entities/Message';
 import { InjectModel } from '@nestjs/mongoose';
 import { User } from 'src/entities/users';
 import { MessagesGroup } from 'src/entities/MessagesGroup';
+import { UserOnline } from 'src/entities/UserOnline';
 @WebSocketGateway({
   cors: {
     origin: ['http://localhost:3000'],
     credentials: true,
   },
 })
-export class MessagingGateway implements OnGatewayConnection {
+export class MessagingGateway
+  implements OnGatewayConnection, OnGatewayDisconnect
+{
   constructor(
     @InjectModel(Messages.name) private readonly messagesModel: Model<Messages>,
     @InjectModel(User.name) private readonly usersModel: Model<User>,
@@ -33,8 +37,14 @@ export class MessagingGateway implements OnGatewayConnection {
     private readonly roomsService: IRoomsService,
     @InjectModel(MessagesGroup.name)
     private messageGroupsModel: Model<MessagesGroup>,
+    @InjectModel(UserOnline.name) private userOnlineModel: Model<UserOnline>,
   ) {}
-  handleConnection(client: any, ...args: any[]) {
+  async handleDisconnect(@ConnectedSocket() client: any) {
+    console.log('Người dùng đã out');
+    console.log(`${client.session} của disconnect`);
+    this.server.emit('disConnected', { status: client.session });
+  }
+  async handleConnection(client: any, ...args: any[]) {
     //console.log(client.id);
     client.emit('connected', { status: 'good' });
     //console.log(client);
@@ -514,5 +524,156 @@ export class MessagingGateway implements OnGatewayConnection {
         return this.server.emit(`updateKickGroup${participant.email}`, payload);
       }
     });
+  }
+  @OnEvent('franchise.groups')
+  async handleFranchiseGroups(payload: any) {
+    this.server.emit(
+      `franchiseGroup${payload.groupsUpdate._id}`,
+      await payload,
+    );
+  }
+  @OnEvent('franchise.groups')
+  async handleFranchiseUserGroups(payload: any) {
+    this.server.emit(
+      `updateFranchiseGroup${payload.groupsUpdate.creator.email}`,
+      await payload,
+    );
+    payload.groupsUpdate.participants.forEach((participant) => {
+      if (payload.groupsUpdate.creator.email !== participant.email) {
+        return this.server.emit(
+          `updateFranchiseGroup${participant.email}`,
+          payload,
+        );
+      }
+    });
+  }
+  @SubscribeMessage('onOnline')
+  async onUserOnline(@MessageBody() data: any, @ConnectedSocket() client: any) {
+    const userOnline = await this.roomsService.online(data.user);
+
+    const existUser = await this.userOnlineModel.findOne({
+      email: data.user.email,
+    });
+    if (!existUser) {
+      const dataDB = {
+        email: data.user.email,
+        session: client.session,
+      };
+      console.log('hihi');
+      await (await this.userOnlineModel.create(dataDB)).save();
+    } else if (existUser.session !== client.session) {
+      console.log('hí');
+      await this.userOnlineModel.updateMany(
+        { email: data.user.email },
+        { $set: { session: client.session } },
+      );
+    }
+    this.server.emit(`userOnlineStatus`, userOnline);
+    userOnline.forEach(async (room) => {
+      return this.server.emit(`userOnlineRoom${room.id}`, await userOnline);
+    });
+  }
+  @SubscribeMessage('onOffline')
+  async onUserOffline(
+    @MessageBody() data: any,
+    @ConnectedSocket() client: any,
+  ) {
+    console.log('Đã zô đây nha');
+    console.log(`${data.user} của out phòng`);
+    const findUserOnline = await this.userOnlineModel.findOne({
+      session: data.user,
+    });
+    if (findUserOnline) {
+      const userOffline = await this.roomsService.offline(findUserOnline.email);
+      this.server.emit(`userOfflineStatus`, userOffline);
+      userOffline.forEach(async (room) => {
+        return this.server.emit(`userOfflineRoom${room.id}`, await userOffline);
+      });
+    }
+  }
+  @OnEvent('offline.user')
+  async handleOfflineUser(payload: any) {
+    const findUserOnline = await this.userOnlineModel.findOne({
+      email: payload.email,
+    });
+    if (findUserOnline) {
+      await this.userOnlineModel.deleteMany({ email: payload.email });
+      const userOffline = await this.roomsService.offline(findUserOnline.email);
+      this.server.emit(`signOutUser`, findUserOnline);
+      userOffline.forEach(async (room) => {
+        return this.server.emit(`signOutRoom${room.id}`, await userOffline);
+      });
+    }
+  }
+  @OnEvent('acceptUser.friends')
+  async handleAcceptUserFriend(payload: any) {
+    const idRooms = payload.roomsUpdateMessage._id;
+    const idP = idRooms.toString();
+    return this.server.emit(`acceptUserFriends${idP}`, await payload);
+  }
+  @OnEvent('acceptUser.friends')
+  async handleAcceptUserFriendAll(payload: any) {
+    this.server.emit(
+      `acceptUserFriendsAll${payload.roomsUpdateMessage.creator.email}`,
+      await payload,
+    );
+    if (payload.roomsUpdateMessage.creator.email !== payload.emailUserActions) {
+      return this.server.emit(
+        `acceptUserFriendsAll${payload.emailUserActions}`,
+        await payload,
+      );
+    }
+  }
+  @OnEvent('acceptUser.friends')
+  async handleAcceptUserIdFriendAll(payload: any) {
+    this.server.emit(
+      `acceptUserFriendsItem${payload.roomsUpdateMessage.creator.email}`,
+      await payload,
+    );
+    if (payload.roomsUpdateMessage.creator.email !== payload.emailUserActions) {
+      return this.server.emit(
+        `acceptUserFriendsItem${payload.emailUserActions}`,
+        await payload,
+      );
+    }
+  }
+  @OnEvent('unfriendUser.friends')
+  async handleUnFriendUserAll(payload: any) {
+    const customer = {
+      emailUserActions: payload.emailUserActions,
+      userActions: payload.userActions,
+      userAccept: payload.userAccept,
+      roomsUpdate: payload.roomsUpdate,
+      reload: false,
+    };
+    this.server.emit(`unFriendsUserAll${payload.emailUserActions}`, customer);
+    if (payload.emailUserActions === payload.userActions.email) {
+      return this.server.emit(
+        `unFriendsUserAll${payload.userAccept.email}`,
+        await payload,
+      );
+    }
+    if (payload.emailUserActions === payload.userAccept.email) {
+      return this.server.emit(
+        `unFriendsUserAll${payload.userActions.email}`,
+        await payload,
+      );
+    }
+  }
+  @OnEvent('undoUser.friends')
+  async handleUndoFriendUserAll(payload: any) {
+    this.server.emit(`undoFriendsUserAll${payload.emailUserActions}`, payload);
+    if (payload.emailUserActions === payload.userActions.email) {
+      return this.server.emit(
+        `undoFriendsUserAll${payload.userAccept.email}`,
+        await payload,
+      );
+    }
+    if (payload.emailUserActions === payload.userAccept.email) {
+      return this.server.emit(
+        `undoFriendsUserAll${payload.userActions.email}`,
+        await payload,
+      );
+    }
   }
 }

@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { IFriendsService } from './friends';
 import { InjectModel } from '@nestjs/mongoose';
 import { User } from 'src/entities/users';
@@ -9,16 +9,269 @@ import {
   SendFriendDto,
 } from './dto/friendDto';
 import { Rooms } from 'src/entities/Rooms';
-import { Services } from 'src/untills/constain';
-import { IRoomsService } from 'src/room/room';
 
 @Injectable()
 export class FriendsService implements IFriendsService {
   constructor(
     @InjectModel(User.name) private readonly userModel: Model<User>,
     @InjectModel(Rooms.name) private readonly roomsModel: Model<Rooms>,
-    @Inject(Services.ROOMS) private readonly roomsService: IRoomsService,
   ) {}
+  async acceptFriendsCR(id: string, myId: string): Promise<AcceptFriendDto> {
+    const objectIdRoomId1 = new mongoose.Types.ObjectId(myId);
+    const objectIdRoomId2 = new mongoose.Types.ObjectId(id);
+    const userAccept = await this.userModel.findById(objectIdRoomId1);
+    const sender = await this.userModel.findById(objectIdRoomId2);
+    if (!userAccept) {
+      throw new HttpException('User not exist', HttpStatus.NOT_FOUND);
+    }
+    if (!sender) {
+      throw new HttpException(
+        'Không tồn tại người gửi này',
+        HttpStatus.NOT_FOUND,
+      );
+    }
+    const existWait = await this.userModel
+      .find({
+        _id: userAccept._id,
+        waitAccept: { $elemMatch: { _id: sender._id } },
+      })
+      .exec();
+    const existSender = await this.userModel
+      .find({
+        _id: sender._id,
+        sendFriend: { $elemMatch: { _id: userAccept._id } },
+      })
+      .exec();
+    if (existWait.length <= 0) {
+      throw new HttpException(
+        'Không có lời mời kết bạn từ User này',
+        HttpStatus.NOT_FOUND,
+      );
+    }
+    if (existSender.length <= 0) {
+      throw new HttpException(
+        'Người này không gửi lời mời kết bạn nào cho bạn',
+        HttpStatus.NOT_FOUND,
+      );
+    }
+    const findFriendsExist = await this.userModel.find({
+      _id: sender._id,
+      friends: {
+        $elemMatch: { _id: userAccept._id },
+      },
+    });
+    const findFriendsExistRecieve = await this.userModel.find({
+      _id: userAccept._id,
+      friends: {
+        $elemMatch: { _id: sender._id },
+      },
+    });
+    if (findFriendsExist.length > 0 || findFriendsExistRecieve.length > 0) {
+      throw new HttpException('2 người đã là bạn', HttpStatus.BAD_REQUEST);
+    }
+    const pushSender = {
+      _id: sender._id,
+      fullName: sender.fullName,
+      gender: sender.gender,
+      background: sender.background,
+      phoneNumber: sender.phoneNumber,
+      email: sender.email,
+      dateOfBirth: sender.dateOfBirth,
+      avatar: sender.avatar,
+      sended: true,
+    };
+    const pushWaiter = {
+      _id: userAccept._id,
+      fullName: userAccept.fullName,
+      gender: userAccept.gender,
+      background: userAccept.background,
+      phoneNumber: userAccept.phoneNumber,
+      email: userAccept.email,
+      dateOfBirth: userAccept.dateOfBirth,
+      avatar: userAccept.avatar,
+      sended: true,
+    };
+    const idSenderPull = {
+      _id: objectIdRoomId2,
+    };
+    const idWaitPull = {
+      _id: objectIdRoomId1,
+    };
+    const pushFriendsWaiter = await this.userModel.findOneAndUpdate(
+      { _id: objectIdRoomId1 },
+      {
+        $push: { friends: pushSender },
+        $pull: { waitAccept: idSenderPull },
+      },
+      { new: true },
+    );
+    const pushFriendsSender = await this.userModel.findOneAndUpdate(
+      { _id: objectIdRoomId2 },
+      {
+        $push: { friends: pushWaiter },
+        $pull: { sendFriend: idWaitPull },
+      },
+      { new: true },
+    );
+    const roomsNew = await this.roomsModel.findOne({
+      'recipient.email': userAccept.email,
+      'creator.email': sender.email,
+    });
+    if (!roomsNew) {
+      throw new HttpException('Rooms not exist two user', HttpStatus.NOT_FOUND);
+    }
+    const updateRoomFriend = await this.roomsModel.findOneAndUpdate(
+      {
+        _id: roomsNew._id,
+      },
+      { 'creator.sended': true, 'recipient.sended': true, friend: true },
+      { new: true },
+    );
+    return {
+      emailUserActions: userAccept.email,
+      userSend: pushFriendsSender,
+      userAccept: pushFriendsWaiter,
+      roomsUpdateMessage: updateRoomFriend,
+    };
+  }
+  async unfriendsCR(id: string, myId: string): Promise<DeleteFriendDto> {
+    const objectIdRoomId1 = new mongoose.Types.ObjectId(myId);
+    const objectIdRoomId2 = new mongoose.Types.ObjectId(id);
+    const userAccept = await this.userModel.findById(objectIdRoomId1);
+    const userCL = await this.userModel.findById(objectIdRoomId2);
+    if (!userAccept) {
+      throw new HttpException('User not exist', HttpStatus.NOT_FOUND);
+    }
+    if (!userCL) {
+      throw new HttpException('UserCL not exist', HttpStatus.NOT_FOUND);
+    }
+    const findFriendsExist = await this.userModel.find({
+      _id: userCL._id,
+      friends: {
+        $elemMatch: { _id: userAccept._id },
+      },
+    });
+    const findFriendsExistRecieve = await this.userModel.find({
+      _id: userAccept._id,
+      friends: {
+        $elemMatch: { _id: userCL._id },
+      },
+    });
+    if (findFriendsExist.length <= 0 || findFriendsExistRecieve.length <= 0) {
+      throw new HttpException(
+        '2 người không là bạn của nhau',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+    const idSenderPull = {
+      _id: objectIdRoomId2,
+    };
+    const idWaitPull = {
+      _id: objectIdRoomId1,
+    };
+    const pullFriendsAction = await this.userModel.findOneAndUpdate(
+      { _id: objectIdRoomId1 },
+      {
+        $pull: { friends: idSenderPull },
+      },
+      { new: true },
+    );
+    const pushFriendsWaiter = await this.userModel.findOneAndUpdate(
+      { _id: objectIdRoomId2 },
+      {
+        $pull: { friends: idWaitPull },
+      },
+      { new: true },
+    );
+    const roomsNew = await this.roomsModel.findOne({
+      $or: [
+        {
+          'creator.email': userAccept.email,
+          'recipient.email': userCL.email,
+        },
+        {
+          'creator.email': userCL.email,
+          'recipient.email': userAccept.email,
+        },
+      ],
+    });
+    return {
+      emailUserActions: userAccept.email,
+      userActions: pullFriendsAction,
+      userAccept: pushFriendsWaiter,
+      roomsUpdate: roomsNew.id,
+      reload: true,
+    };
+  }
+  async undoFriendsCR(id: string, myId: string): Promise<DeleteFriendDto> {
+    const objectIdRoomId1 = new mongoose.Types.ObjectId(myId);
+    const objectIdRoomId2 = new mongoose.Types.ObjectId(id);
+    const userAction = await this.userModel.findById(objectIdRoomId1);
+    const userNAction = await this.userModel.findById(objectIdRoomId2);
+    if (!userAction) {
+      throw new HttpException('User not exist', HttpStatus.NOT_FOUND);
+    }
+    if (!userNAction) {
+      throw new HttpException('userNAction not exist', HttpStatus.NOT_FOUND);
+    }
+    const existWait = await this.userModel
+      .find({
+        _id: userNAction._id,
+        waitAccept: { $elemMatch: { _id: userAction._id } },
+      })
+      .exec();
+    const existSender = await this.userModel
+      .find({
+        _id: userAction._id,
+        sendFriend: { $elemMatch: { _id: userNAction._id } },
+      })
+      .exec();
+    if (existWait.length <= 0) {
+      throw new HttpException(
+        'Không có lời mời kết bạn nào từ người này',
+        HttpStatus.NOT_FOUND,
+      );
+    }
+    if (existSender.length <= 0) {
+      throw new HttpException(
+        'Bạn không gửi lời mời kết bạn với người này',
+        HttpStatus.NOT_FOUND,
+      );
+    }
+    const idSenderPull = {
+      _id: objectIdRoomId1,
+    };
+    const idWaitPull = {
+      _id: objectIdRoomId2,
+    };
+    const pullFriendsWaiter = await this.userModel.findOneAndUpdate(
+      { _id: objectIdRoomId1 },
+      {
+        $pull: { sendFriend: idWaitPull },
+      },
+      { new: true },
+    );
+    const pullFriendsSender = await this.userModel.findOneAndUpdate(
+      { _id: objectIdRoomId2 },
+      {
+        $pull: { waitAccept: idSenderPull },
+      },
+      { new: true },
+    );
+    const roomsNew = await this.roomsModel.findOne({
+      'recipient._id': objectIdRoomId2,
+      'creator._id': objectIdRoomId1,
+    });
+    if (!roomsNew) {
+      throw new HttpException('Rooms not exist two user', HttpStatus.NOT_FOUND);
+    }
+    return {
+      emailUserActions: userAction.email,
+      userActions: pullFriendsWaiter,
+      userAccept: pullFriendsSender,
+      roomsUpdate: roomsNew.id,
+    };
+  }
   async undoFriends(
     idNotAction: string,
     myId: string,
