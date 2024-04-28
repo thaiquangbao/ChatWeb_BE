@@ -10,6 +10,7 @@ import { IUserService } from '../users/users';
 import { Services } from '../untills/constain';
 import { User } from '../entities/users';
 import { Messages } from 'src/entities/Message';
+import { RoomsCall, RoomsPromise } from './dto/RoomDTO.dto';
 // import { RoomsPromise } from './dto/RoomDTO.dto';
 
 @Injectable()
@@ -20,6 +21,63 @@ export class RoomService implements IRoomsService {
     @InjectModel(User.name) private usersModel: Model<User>,
     @InjectModel(Messages.name) private messagesModel: Model<Messages>,
   ) {}
+  async onlineReturnHome(user: User): Promise<ListRooms[]> {
+    try {
+      await this.roomsModel.updateMany(
+        {
+          'creator.email': user.email,
+        },
+        { $set: { 'creator.online': true } },
+      );
+      await this.roomsModel.updateMany(
+        {
+          'recipient.email': user.email,
+        },
+        { $set: { 'recipient.online': true } },
+      );
+      await this.usersModel.updateOne({ email: user.email }, { online: true });
+      const findOnline: ListRooms[] = await this.roomsModel.find({
+        $or: [
+          { 'recipient.email': user.email },
+          { 'creator.email': user.email },
+        ],
+      });
+      return findOnline;
+    } catch (error) {
+      console.log(error);
+      return error;
+    }
+  }
+  async rejectedCall(room: RoomsCall): Promise<RoomsPromise> {
+    const result: RoomsPromise = await this.roomsModel.findOneAndUpdate(
+      {
+        'recipient.email': room.recipient.email,
+        'creator.email': room.creator.email,
+      },
+      { $set: { call: false } },
+    );
+    return result;
+  }
+  async cancelCall(room: RoomsCall): Promise<Rooms> {
+    const result = await this.roomsModel.findOneAndUpdate(
+      {
+        'recipient.email': room.recipient.email,
+        'creator.email': room.creator.email,
+      },
+      { $set: { call: false } },
+    );
+    return result;
+  }
+  async call(room: RoomsCall): Promise<RoomsPromise> {
+    const result: RoomsPromise = await this.roomsModel.findOneAndUpdate(
+      {
+        'recipient.email': room.recipient.email,
+        'creator.email': room.creator.email,
+      },
+      { $set: { call: true } },
+    );
+    return result;
+  }
   async offline(email: string): Promise<ListRooms[]> {
     try {
       const user = await this.usersModel.findOne({ email: email });

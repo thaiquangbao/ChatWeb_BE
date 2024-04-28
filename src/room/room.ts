@@ -1,6 +1,8 @@
 import { CreateRoomsParams, ListRooms } from '../untills/types';
 import { UsersPromise } from 'src/auth/dtos/Users.dto';
 import { Rooms } from 'src/entities/Rooms';
+import { RoomsCall, RoomsPromise } from './dto/RoomDTO.dto';
+import { User } from 'src/entities/users';
 // import { RoomsPromise } from './dto/RoomDTO.dto';
 
 export interface IRoomsService {
@@ -15,6 +17,10 @@ export interface IRoomsService {
   deleteRooms(roomsId: string);
   online(user: UsersPromise): Promise<ListRooms[]>;
   offline(email: string): Promise<ListRooms[]>;
+  call(room: RoomsCall): Promise<RoomsPromise>;
+  rejectedCall(room: RoomsCall): Promise<RoomsPromise>;
+  cancelCall(room: RoomsCall): Promise<Rooms>;
+  onlineReturnHome(user: User): Promise<ListRooms[]>;
   // save(rooms: RoomsPromise): Promise<RoomsPromise>;
   // getMessages(params: GetConversationMessagesParams): Promise<RoomsPromise>;
   //update(params: UpdateConversationParams);

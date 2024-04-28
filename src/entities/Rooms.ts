@@ -16,5 +16,7 @@ export class Rooms {
   lastMessageSent: Messages;
   @Prop({ type: Boolean, default: false })
   friend: boolean;
+  @Prop({ type: Boolean, default: false })
+  call: boolean;
 }
 export const RoomsSchema = SchemaFactory.createForClass(Rooms);

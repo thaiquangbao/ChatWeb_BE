@@ -19,6 +19,9 @@ import { InjectModel } from '@nestjs/mongoose';
 import { User } from 'src/entities/users';
 import { MessagesGroup } from 'src/entities/MessagesGroup';
 import { UserOnline } from 'src/entities/UserOnline';
+import { RoomsCall } from 'src/room/dto/RoomDTO.dto';
+import { Rooms } from 'src/entities/Rooms';
+import { UsersPromise } from 'src/auth/dtos/Users.dto';
 @WebSocketGateway({
   cors: {
     origin: ['http://localhost:3000'],
@@ -38,15 +41,24 @@ export class MessagingGateway
     @InjectModel(MessagesGroup.name)
     private messageGroupsModel: Model<MessagesGroup>,
     @InjectModel(UserOnline.name) private userOnlineModel: Model<UserOnline>,
+    @InjectModel(Rooms.name) private readonly roomsModel: Model<Rooms>,
   ) {}
   async handleDisconnect(@ConnectedSocket() client: any) {
     console.log('Người dùng đã out');
     console.log(`${client.session} của disconnect`);
     this.server.emit('disConnected', { status: client.session });
+    console.log(client.handshake.auth);
+    if (client.handshake.auth.rooms) {
+      console.log('mượt ròi');
+      this.server.emit(`userLeaveStatus`, {
+        status: client.session,
+        rooms: client.handshake.auth.rooms,
+      });
+    }
   }
   async handleConnection(client: any, ...args: any[]) {
     //console.log(client.id);
-    client.emit('connected', { status: 'good' });
+    client.emit('connected', { status: client.session });
     //console.log(client);
   }
 
@@ -56,6 +68,45 @@ export class MessagingGateway
   @SubscribeMessage('createMessage')
   handleCreateMessage(@MessageBody() data: any) {
     console.log('createdMessages');
+  }
+  @SubscribeMessage('outMeetVoice')
+  async handleOutMeet(
+    @MessageBody() data: any,
+    @ConnectedSocket() client: any,
+  ) {
+    client.handshake.auth = {
+      rooms: data.idRooms,
+    };
+  }
+  @SubscribeMessage('preJoinHome')
+  async handleJoinMeet(
+    @MessageBody() data: any,
+    @ConnectedSocket() client: any,
+  ) {
+    const find2User = await this.roomsModel.findById(data.user);
+    const userOnlineCreator = await this.roomsService.onlineReturnHome(
+      find2User.creator,
+    );
+    const userOnlineRecipient = await this.roomsService.onlineReturnHome(
+      find2User.recipient,
+    );
+    this.server.emit(`userOnlineMeetOut`, {
+      sd: userOnlineCreator,
+      td: userOnlineRecipient,
+    });
+    client.handshake.auth = {};
+    userOnlineCreator.forEach(async (room) => {
+      this.server.emit(
+        `userOnlineAfterMeetO${room.id}|${find2User.creator.email}`,
+        await userOnlineCreator,
+      );
+    });
+    userOnlineRecipient.forEach(async (room) => {
+      return this.server.emit(
+        `userOnlineAfterMeetT${room.id}|${find2User.recipient.email}`,
+        await userOnlineRecipient,
+      );
+    });
   }
   @OnEvent('messages.create')
   async handleMessagesCreateEvent(payload: any) {
@@ -675,5 +726,194 @@ export class MessagingGateway
         await payload,
       );
     }
+  }
+  @OnEvent('messagesRooms.createWithFeedBack')
+  async handleRoomsCreateWithFeedBackEvent(payload: any) {
+    this.server.emit(`feedBackRooms${payload.rooms.id}`, await payload);
+  }
+  @OnEvent('messagesRooms.createWithFeedBack')
+  async handleRoomsWithFeedBackEvent(payload: any) {
+    this.server.emit(
+      `feedBackLastMessagesRooms${payload.rooms.creator.email}`,
+      payload,
+    );
+    if (payload.rooms.creator.email !== payload.rooms.recipient.email) {
+      return this.server.emit(
+        `feedBackLastMessagesRooms${payload.rooms.recipient.email}`,
+        payload,
+      );
+    }
+  }
+  @SubscribeMessage('userCallVoice')
+  async onUserCallVoice(
+    @MessageBody() data: any,
+    @ConnectedSocket() client: any,
+  ) {
+    const findRooms = await this.roomsService.findById(data.idRooms);
+    const userAlreadyOnline = await this.userOnlineModel.findOne({
+      email: data.userReciveCall,
+    });
+    if (!userAlreadyOnline) {
+      const dataError = { errorStatus: true };
+      return this.server.emit(`userCallVoice${data.userCall.email}`, dataError);
+    }
+    const roomsExistsCall = await this.roomsModel.find({
+      $or: [
+        { 'recipient.email': data.userCall.email },
+        { 'creator.email': data.userCall.email },
+      ],
+      call: true,
+    });
+    if (roomsExistsCall.length > 0) {
+      const dataErrorCall = { errorCall: true };
+      return this.server.emit(
+        `userCallVoice${data.userCall.email}`,
+        dataErrorCall,
+      );
+    }
+    const roomsWithCall = await this.roomsModel.find({
+      $or: [
+        { 'recipient.email': data.userReciveCall },
+        { 'creator.email': data.userReciveCall },
+      ],
+      call: true,
+    });
+    if (roomsWithCall.length > 0) {
+      const dataError = { error: true };
+      return this.server.emit(`userCallVoice${data.userCall.email}`, dataError);
+    }
+    const settingRooms: RoomsCall = {
+      recipient: findRooms.recipient, // Add the required 'id' property
+      creator: findRooms.creator,
+    };
+    const actionCall = await this.roomsService.call(settingRooms);
+    const dataPayload = {
+      roomCall: actionCall,
+      userCall: data.userCall,
+    };
+
+    this.server.emit(`userCallVoice${actionCall.creator.email}`, dataPayload);
+    return this.server.emit(
+      `userCallVoice${actionCall.recipient.email}`,
+      dataPayload,
+    );
+  }
+  @SubscribeMessage('rejectedVoiceCall')
+  async onRejectedCallVoice(
+    @MessageBody() data: any,
+    @ConnectedSocket() client: any,
+  ) {
+    const findRooms = await this.roomsService.findById(data.idRooms);
+    if (findRooms.call !== true || findRooms.call === null) {
+      const dataError = { error: true };
+      return this.server.emit(
+        `userRejectedCallVoice${data.userReject.email}`,
+        dataError,
+      );
+    }
+    const settingRooms: RoomsCall = {
+      recipient: findRooms.recipient,
+      creator: findRooms.creator,
+    };
+    const actionCall = await this.roomsService.rejectedCall(settingRooms);
+    const dataPayload = {
+      roomCall: actionCall,
+      userReject: data.userReject,
+    };
+
+    this.server.emit(
+      `userRejectedCallVoice${actionCall.creator.email}`,
+      dataPayload,
+    );
+    return this.server.emit(
+      `userRejectedCallVoice${actionCall.recipient.email}`,
+      dataPayload,
+    );
+  }
+  @SubscribeMessage('cancelVoiceCall')
+  async onCancelCallVoice(
+    @MessageBody() data: any,
+    @ConnectedSocket() client: any,
+  ) {
+    const findRooms = await this.roomsService.findById(data.idRooms);
+    if (findRooms.call !== true) {
+      const dataError = { error: true };
+      return this.server.emit(
+        `userCancelCallVoice${data.userCancel.email}`,
+        dataError,
+      );
+    }
+    const settingRooms: RoomsCall = {
+      recipient: findRooms.recipient,
+      creator: findRooms.creator,
+    };
+    const actionCall = await this.roomsService.cancelCall(settingRooms);
+    const dataPayload = {
+      roomCall: actionCall,
+      userCancel: data.userCancel,
+    };
+
+    this.server.emit(
+      `userCancelCallVoice${actionCall.creator.email}`,
+      dataPayload,
+    );
+    return this.server.emit(
+      `userCancelCallVoice${actionCall.recipient.email}`,
+      dataPayload,
+    );
+  }
+  @SubscribeMessage('userAcceptCallVoice')
+  async onAcceptCallVoice(
+    @MessageBody() data: any,
+    @ConnectedSocket() client: any,
+  ) {
+    const findRooms = await this.roomsService.findById(data.idRooms);
+    if (findRooms.call !== true) {
+      const dataError = { error: true };
+      return this.server.emit(
+        `userAttendCallVoice${data.userInCall.email}`,
+        dataError,
+      );
+    }
+    const dataPayload = {
+      userInCall: data.userInCall,
+      roomCall: findRooms,
+      idRooms: data.idRooms,
+    };
+    this.server.emit(
+      `userAttendCallVoice${findRooms.recipient.email}`,
+      dataPayload,
+    );
+
+    return this.server.emit(
+      `userAttendCallVoice${findRooms.creator.email}`,
+      dataPayload,
+    );
+  }
+  @SubscribeMessage('leave-callVoice')
+  async onLeaveCallVoice(
+    @MessageBody() data: any,
+    @ConnectedSocket() client: any,
+  ) {
+    const findRooms = await this.roomsService.findById(data.idRooms);
+    if (findRooms.call !== true || findRooms.call === null) {
+      const dataError = { error: true };
+      return this.server.emit(`outCallVoice${data.userLeave.email}`, dataError);
+    }
+    const settingRooms: RoomsCall = {
+      recipient: findRooms.recipient,
+      creator: findRooms.creator,
+    };
+    const actionCall = await this.roomsService.cancelCall(settingRooms);
+    const dataPayload = {
+      roomCall: actionCall,
+      userLeave: data.userLeave,
+    };
+
+    this.server.emit(`outCallVoice${actionCall.creator.email}`, dataPayload);
+    return this.server.emit(
+      `outCallVoice${actionCall.recipient.email}`,
+      dataPayload,
+    );
   }
 }

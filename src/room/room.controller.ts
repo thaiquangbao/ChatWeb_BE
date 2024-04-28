@@ -15,7 +15,7 @@ import { Response } from 'express';
 import { AuthenticatedGuard } from '../auth/untills/Guards';
 import { Routes, Services } from '../untills/constain';
 import { IRoomsService } from './room';
-import { RoomDTO } from './dto/RoomDTO.dto';
+import { RoomDTO, RoomsCall } from './dto/RoomDTO.dto';
 import { UsersPromise } from 'src/auth/dtos/Users.dto';
 import { AuthUser } from '../untills/decorater';
 import { EventEmitter2 } from '@nestjs/event-emitter';
@@ -48,7 +48,15 @@ export class RoomController {
     return this.roomsService.getRooms(id);
   }
   @Get(':id')
-  async getRoomsById(@Param('id') id: string) {
+  async getRoomsById(@Param('id') id: string, @Res() res: Response) {
+    try {
+      const result = await this.roomsService.findById(id);
+      console.log(result);
+      return res.send(result);
+    } catch (error) {
+      console.log(error);
+      return res.send(error);
+    }
     return this.roomsService.findById(id);
   }
   @Delete(':id/:idRooms')
@@ -70,6 +78,16 @@ export class RoomController {
       return res.send(deleteRooms).status(200);
     } catch (error) {
       return res.send(error);
+    }
+  }
+  @Post('cancelCall')
+  async cancelCall(@Body() rooms: RoomsCall) {
+    try {
+      const cancelCall = await this.roomsService.cancelCall(rooms);
+      return cancelCall;
+    } catch (error) {
+      console.log(error);
+      return error;
     }
   }
 }
