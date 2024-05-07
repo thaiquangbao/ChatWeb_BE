@@ -1,5 +1,6 @@
 import { ArrayMinSize, ArrayNotEmpty, IsString } from 'class-validator';
 import { UsersPromise } from 'src/auth/dtos/Users.dto';
+import { User } from 'src/entities/users';
 
 export class CreateGroupsDto {
   @ArrayNotEmpty()
@@ -26,4 +27,16 @@ export class KickUser {
 export class Franchiser {
   idGroups: string;
   idUserFranchise: string;
+}
+export interface UserAttends {
+  email: string;
+  fullName: string;
+  acceptCall: boolean;
+}
+export class CallGroups {
+  id: string;
+  participants: User[];
+  callGroup: boolean;
+  creator: User;
+  attendCallGroup?: UserAttends[];
 }

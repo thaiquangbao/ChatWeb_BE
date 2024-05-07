@@ -1,6 +1,11 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { User } from './users';
 import { Messages } from './Message';
+export interface UserAttends {
+  email: string;
+  fullName: string;
+  acceptCall: boolean;
+}
 @Schema({
   timestamps: true,
 })
@@ -17,5 +22,9 @@ export class GroupRooms {
   lastMessageSent: Messages;
   @Prop({ type: String, default: '' })
   avtGroups: string;
+  @Prop({ type: Boolean, default: false })
+  callGroup: boolean;
+  @Prop({ type: Array, default: () => [] })
+  attendCallGroup: UserAttends[];
 }
 export const GroupRoomsSchema = SchemaFactory.createForClass(GroupRooms);

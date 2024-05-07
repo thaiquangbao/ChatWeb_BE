@@ -6,6 +6,7 @@ import {
   KickGroups,
   UpdateGroups,
 } from 'src/untills/types';
+import { CallGroups } from './dtos/group.dto';
 
 export interface IGroups {
   createGroups(
@@ -23,4 +24,13 @@ export interface IGroups {
   ): Promise<GroupRooms>;
   kickGroups(userAction: UsersPromise, kickGroups: KickGroups);
   franchiseLeader(userAction: UsersPromise, franchiser: Franchiser);
+  callGroup(id: string): Promise<CallGroups>;
+  cancelCallGroup(id: string): Promise<CallGroups>;
+  rejectedCallGroup(id: string, userOut: string): Promise<CallGroups>;
+  acceptCallGroup(
+    id: string,
+    userAccept: string,
+    nameAccept: string,
+    userCall: string,
+  ): Promise<CallGroups>;
 }

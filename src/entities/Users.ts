@@ -38,5 +38,7 @@ export class User {
   groupRooms: GroupRooms[];
   @Prop({ type: Boolean, default: false })
   online: boolean;
+  @Prop({ type: Boolean, default: false })
+  calling: boolean;
 }
 export const UsersSchema = SchemaFactory.createForClass(User);

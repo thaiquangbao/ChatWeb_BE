@@ -56,6 +56,14 @@ export class RoomService implements IRoomsService {
       },
       { $set: { call: false } },
     );
+    await this.usersModel.updateOne(
+      { email: room.creator.email },
+      { calling: false },
+    );
+    await this.usersModel.updateOne(
+      { email: room.recipient.email },
+      { calling: false },
+    );
     return result;
   }
   async cancelCall(room: RoomsCall): Promise<Rooms> {
@@ -66,6 +74,14 @@ export class RoomService implements IRoomsService {
       },
       { $set: { call: false } },
     );
+    await this.usersModel.updateOne(
+      { email: room.creator.email },
+      { calling: false },
+    );
+    await this.usersModel.updateOne(
+      { email: room.recipient.email },
+      { calling: false },
+    );
     return result;
   }
   async call(room: RoomsCall): Promise<RoomsPromise> {
@@ -75,6 +91,14 @@ export class RoomService implements IRoomsService {
         'creator.email': room.creator.email,
       },
       { $set: { call: true } },
+    );
+    await this.usersModel.updateOne(
+      { email: room.creator.email },
+      { calling: true },
+    );
+    await this.usersModel.updateOne(
+      { email: room.recipient.email },
+      { calling: true },
     );
     return result;
   }

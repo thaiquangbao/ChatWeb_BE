@@ -3,6 +3,7 @@ import { IGroups } from './group';
 import {
   CreateGroupParams,
   Franchiser,
+  GroupOne,
   KickGroups,
   UpdateGroups,
 } from 'src/untills/types';
@@ -13,6 +14,7 @@ import { User } from 'src/entities/users';
 import mongoose, { Model } from 'mongoose';
 import { IUserService } from 'src/users/users';
 import { Services } from 'src/untills/constain';
+import { CallGroups } from './dtos/group.dto';
 
 @Injectable()
 export class GroupRoomsService implements IGroups {
@@ -21,6 +23,135 @@ export class GroupRoomsService implements IGroups {
     @InjectModel(GroupRooms.name) private groupsModel: Model<GroupRooms>,
     @Inject(Services.USERS) private readonly userService: IUserService,
   ) {}
+  async acceptCallGroup(
+    id: string,
+    userAccept: string,
+    nameAccept: string,
+    userCall: string,
+  ): Promise<CallGroups> {
+    const existGroups = await this.groupsModel.findById(id);
+    const result: GroupOne = await this.groupsModel.findOneAndUpdate(
+      { _id: existGroups._id, 'attendCallGroup.email': userAccept },
+      {
+        $set: {
+          'attendCallGroup.$.email': userAccept,
+          'attendCallGroup.$.fullName': nameAccept,
+          'attendCallGroup.$.acceptCall': true,
+        },
+      },
+      { new: true },
+    );
+    const findUserCall = await this.usersModel.findOne({ email: userCall });
+    const findUserAttend = await this.groupsModel.findOne({
+      _id: existGroups._id,
+      attendCallGroup: {
+        $elemMatch: { email: findUserCall.email, acceptCall: true },
+      },
+    });
+    if (!findUserAttend) {
+      await this.groupsModel.findOneAndUpdate(
+        { _id: existGroups._id, 'attendCallGroup.email': findUserCall.email },
+        {
+          $set: {
+            'attendCallGroup.$.email': findUserCall.email,
+            'attendCallGroup.$.fullName': findUserCall.fullName,
+            'attendCallGroup.$.acceptCall': true,
+          },
+        },
+        { new: true },
+      );
+    }
+
+    return result;
+  }
+  async rejectedCallGroup(id: string, userOut: string): Promise<CallGroups> {
+    const existGroups = await this.groupsModel.findById(id);
+    const dataOut = { email: userOut };
+    const result: GroupOne = await this.groupsModel.findByIdAndUpdate(
+      existGroups.id,
+      {
+        $pull: { attendCallGroup: dataOut },
+      },
+      { new: true },
+    );
+    await this.usersModel.updateOne({ email: userOut }, { calling: false });
+    return result;
+  }
+  async cancelCallGroup(id: string): Promise<CallGroups> {
+    const existGroups = await this.groupsModel.findById(id);
+    await Promise.all(
+      existGroups.attendCallGroup.map((participant) => {
+        return this.usersModel.updateOne(
+          { email: participant.email },
+          { calling: false },
+        );
+      }),
+    );
+    const result: GroupOne = await this.groupsModel.findByIdAndUpdate(
+      existGroups.id,
+      {
+        $set: { callGroup: false, attendCallGroup: [] },
+      },
+      { new: true },
+    );
+    return result;
+  }
+  async callGroup(id: string): Promise<CallGroups> {
+    const existGroups = await this.groupsModel.findById(id);
+    //const editParticipants = [...existGroups.participants, existGroups.creator];
+    const result: GroupOne = await this.groupsModel.findByIdAndUpdate(
+      existGroups.id,
+      {
+        $set: {
+          callGroup: true,
+        },
+      },
+      { new: true },
+    );
+    const userOnline = await this.usersModel.findOne({
+      email: existGroups.creator.email,
+      online: true,
+    });
+    if (userOnline) {
+      await this.usersModel.updateOne(
+        { email: existGroups.creator.email },
+        { calling: true },
+      );
+      const dataCreator = {
+        email: existGroups.creator.email,
+        fullName: existGroups.creator.fullName,
+        acceptCall: false,
+      };
+      await this.groupsModel.updateOne(
+        { _id: existGroups._id },
+        { $push: { attendCallGroup: dataCreator } },
+      );
+    }
+    await Promise.all(
+      existGroups.participants.map(async (participant) => {
+        const userOnlineReci = await this.usersModel.findOne({
+          email: participant.email,
+          online: true,
+        });
+        if (userOnlineReci) {
+          await this.usersModel.findOneAndUpdate(
+            { email: participant.email },
+            { calling: true },
+          );
+          const dataCreator = {
+            email: participant.email,
+            fullName: participant.fullName,
+            acceptCall: false,
+          };
+          await this.groupsModel.updateOne(
+            { _id: existGroups._id },
+            { $push: { attendCallGroup: dataCreator } },
+          );
+        }
+      }),
+    );
+    return result;
+  }
   async franchiseLeader(userAction: UsersPromise, franchiser: Franchiser) {
     const { idGroups, idUserFranchise } = franchiser;
     const objectIdGroupId = new mongoose.Types.ObjectId(idGroups);

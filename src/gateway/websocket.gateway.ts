@@ -13,7 +13,7 @@ import { Server } from 'socket.io';
 import { IRoomsService } from 'src/room/room';
 import { Services } from 'src/untills/constain';
 import { IMessageService } from 'src/messages/messages';
-import { Model } from 'mongoose';
+import mongoose, { Model } from 'mongoose';
 import { Messages } from 'src/entities/Message';
 import { InjectModel } from '@nestjs/mongoose';
 import { User } from 'src/entities/users';
@@ -21,7 +21,9 @@ import { MessagesGroup } from 'src/entities/MessagesGroup';
 import { UserOnline } from 'src/entities/UserOnline';
 import { RoomsCall } from 'src/room/dto/RoomDTO.dto';
 import { Rooms } from 'src/entities/Rooms';
-import { UsersPromise } from 'src/auth/dtos/Users.dto';
+import { GroupRooms } from 'src/entities/Groups';
+import { IGroups } from 'src/group-rooms/group';
+import { CallGroups } from '../group-rooms/dtos/Group.dto';
 @WebSocketGateway({
   cors: {
     origin: ['http://localhost:3000'],
@@ -42,6 +44,9 @@ export class MessagingGateway
     private messageGroupsModel: Model<MessagesGroup>,
     @InjectModel(UserOnline.name) private userOnlineModel: Model<UserOnline>,
     @InjectModel(Rooms.name) private readonly roomsModel: Model<Rooms>,
+    @InjectModel(GroupRooms.name) private groupsModel: Model<GroupRooms>,
+    @Inject(Services.GROUPS)
+    private readonly groupsService: IGroups,
   ) {}
   async handleDisconnect(@ConnectedSocket() client: any) {
     console.log('Người dùng đã out');
@@ -1129,6 +1134,273 @@ export class MessagingGateway
       this.server.emit(
         `userAttendCallVideoRecipient${findRooms.creator.email}`,
         dataPayload,
+      );
+    }
+  }
+  @SubscribeMessage('userCallGroup')
+  async onUserCallGroup(@MessageBody() data: any) {
+    const findGroups = await this.groupsModel.findById(data.idGroups);
+    /* const groupsExistsCall = await this.groupsModel.find({
+      $or: [
+        { 'creator.email': data.userCall.email },
+        { participants: { $elemMatch: { email: data.userCall.email } } },
+      ],
+      call: true,
+    }); */
+    const userIsCalling = await this.usersModel.findOne({
+      email: data.userCall.email,
+      calling: true,
+    });
+    if (userIsCalling) {
+      const dataErrorCall = { errorCallGroup: true }; // bạn đó có cuộc gọi khác trong group khác
+      return this.server.emit(
+        `userCallGroups${data.userCall.email}`,
+        dataErrorCall,
+      );
+    }
+    const actionCall = await this.groupsService.callGroup(findGroups.id);
+    const dataPayload = {
+      groupCall: actionCall,
+      userCall: data.userCall,
+    };
+    this.server.emit(`userCallGroups${data.userCall.email}`, dataPayload);
+    if (data.userCall.email === actionCall.creator.email) {
+      const participantPromises = actionCall.participants.map(
+        async (participant) => {
+          // Thực hiện các truy vấn cùng một lúc
+          const [userAlreadyOnline, usersExistsCall, usersExistsCallGroups] =
+            await Promise.all([
+              this.userOnlineModel.findOne({ email: participant.email }),
+              this.roomsModel.find({
+                $or: [
+                  { 'recipient.email': participant.email },
+                  { 'creator.email': participant.email },
+                ],
+                call: true,
+              }),
+              await this.groupsModel.find({
+                $and: [
+                  {
+                    _id: { $ne: findGroups._id },
+                  },
+                  {
+                    attendCallGroup: {
+                      $elemMatch: { email: participant.email },
+                    },
+                  },
+                ],
+              }),
+              this.usersModel.findOne({
+                email: participant.email,
+                calling: true,
+              }),
+            ]);
+
+          // Kiểm tra điều kiện
+          if (
+            userAlreadyOnline &&
+            usersExistsCall.length <= 0 &&
+            usersExistsCallGroups.length <= 0
+          ) {
+            // Phát ra sự kiện nếu điều kiện đúng
+            this.server.emit(
+              `userCallGroupsRecipient${participant.email}`,
+              dataPayload,
+            );
+          }
+        },
+      );
+      await Promise.all(participantPromises);
+    } else {
+      const alreadySend = await this.userAlreadyCallGroup(
+        actionCall.creator.email,
+        findGroups.id,
+      );
+      if (alreadySend === true) {
+        this.server.emit(
+          `userCallGroupsRecipient${actionCall.creator.email}`,
+          dataPayload,
+        );
+      }
+      const userReciveCallGroup = actionCall.participants
+        .filter((participant) => participant.email !== data.userCall.email)
+        .map(async (participant) => {
+          const alreadySendParticipant = await this.userAlreadyCallGroup(
+            participant.email,
+            findGroups.id,
+          );
+          if (alreadySendParticipant === true) {
+            this.server.emit(
+              `userCallGroupsRecipient${participant.email}`,
+              dataPayload,
+            );
+          }
+        });
+      await Promise.all(userReciveCallGroup);
+    }
+  }
+  userAlreadyCallGroup = async (email: string, idGroups: string) => {
+    const id = new mongoose.Types.ObjectId(idGroups);
+    const [userAlreadyOnline, usersExistsCall, usersExistsCallGroups] =
+      await Promise.all([
+        this.userOnlineModel.findOne({ email: email }),
+        this.roomsModel.find({
+          $or: [{ 'recipient.email': email }, { 'creator.email': email }],
+          call: true,
+        }),
+        this.groupsModel.find({
+          $and: [
+            {
+              _id: { $ne: id },
+            },
+            {
+              attendCallGroup: {
+                $elemMatch: { email: email },
+              },
+            },
+          ],
+        }),
+      ]);
+
+    // Kiểm tra điều kiện
+    if (
+      userAlreadyOnline &&
+      usersExistsCall.length <= 0 &&
+      usersExistsCallGroups.length <= 0
+    ) {
+      // Phát ra sự kiện nếu điều kiện đúng
+      return true;
+    }
+    return false;
+  };
+  @SubscribeMessage('cancelCallGroup')
+  async onCancelCallGroup(@MessageBody() data: any) {
+    const findGroups = await this.groupsModel.findById(data.idGroups);
+    const userIsCalling = await this.usersModel.findOne({
+      email: data.userCancel.email,
+    });
+    if (findGroups.callGroup !== true && userIsCalling.calling !== true) {
+      const dataError = { error: true };
+      return this.server.emit(
+        `userCancelCallGroups${data.userCancel.email}`,
+        dataError,
+      );
+    }
+    const actionCall = await this.groupsService.cancelCallGroup(findGroups.id);
+    this.server.emit(
+      `userCancelCallGroups${data.userCancel.email}`,
+      actionCall,
+    );
+    findGroups.attendCallGroup
+      .filter((participant) => participant.email !== data.userCancel.email)
+      .map(async (participant) => {
+        this.server.emit(
+          `userCancelCallGroupsRecipient${participant.email}`,
+          actionCall,
+        );
+      });
+  }
+  @SubscribeMessage('rejectedCallGroups')
+  async onRejectCallGroup(@MessageBody() data: any) {
+    const findGroups = await this.groupsModel.findById(data.idGroups);
+    const userIsCalling = await this.usersModel.findOne({
+      email: data.userReject.email,
+    });
+    const existCallGroup = await this.groupsModel.findById(data.idGroups, {
+      attendCallGroup: {
+        $elemMatch: { email: data.userReject.email },
+      },
+    });
+    if (
+      findGroups.callGroup !== true ||
+      findGroups.callGroup === null ||
+      userIsCalling.calling !== true ||
+      !existCallGroup
+    ) {
+      const dataError = { error: true };
+      return this.server.emit(
+        `userRejectCallGroups${data.userReject.email}`,
+        dataError,
+      );
+    }
+    const actionCall = await this.groupsService.rejectedCallGroup(
+      findGroups.id,
+      userIsCalling.email,
+    );
+    const dataOuted = {
+      groupUpdated: actionCall,
+      userNotAttend: userIsCalling.fullName,
+    };
+    this.server.emit(`userRejectCallGroups${data.userReject.email}`, dataOuted);
+    actionCall.attendCallGroup
+      .filter((participant) => participant.email !== data.userReject.email)
+      .map(async (participant) => {
+        this.server.emit(
+          `userRejectCallGroupsRecipient${participant.email}`,
+          dataOuted,
+        );
+      });
+    if (actionCall.attendCallGroup.length <= 1) {
+      const dataError1 = { errorNullUser: true };
+      await this.groupsService.cancelCallGroup(findGroups.id);
+      return this.server.emit(
+        `userRejectCallGroupsRecipient${actionCall.attendCallGroup[0].email}`,
+        dataError1,
+      );
+    }
+  }
+  @SubscribeMessage('userAcceptCallGroup')
+  async onAcceptCallGroup(@MessageBody() data: any) {
+    const findGroups = await this.groupsModel.findById(data.idGroups);
+    if (findGroups.callGroup !== true) {
+      const dataError = { error: true };
+      return this.server.emit(
+        `userAttendCallGroup${data.userInCall.email}`,
+        dataError,
+      );
+    }
+    const intoCallGroup = await this.groupsService.acceptCallGroup(
+      findGroups.id,
+      data.userInCall.email,
+      data.userInCall.fullName,
+      data.userCall,
+    );
+    const dataPayload = {
+      idGroups: data.idGroups,
+      userInCall: data.userInCall,
+      groupCall: intoCallGroup,
+    };
+    this.server.emit(
+      `userAttendCallGroup${data.userInCall.email}`,
+      dataPayload,
+    );
+    const groupExist = await this.groupsModel.findById(findGroups._id);
+    const quantityUserAttend = groupExist.attendCallGroup.filter(
+      (user) => user.acceptCall,
+    ).length;
+    if (quantityUserAttend === 2) {
+      return this.server.emit(
+        `userAttendCallGroupOwner${data.userCall}`,
+        dataPayload,
+      );
+    }
+  }
+  @SubscribeMessage('leave-callGroup')
+  async onLeaveCallGroup(@MessageBody() data: any) {
+    const actionCall = await this.groupsService.rejectedCallGroup(
+      data.idGroup,
+      data.userLeave.email,
+    );
+    const dataPayload = {
+      groupCall: actionCall,
+      userLeave: data.userLeave,
+    };
+    this.server.emit(`outCallGroup${data.userLeave.email}`, dataPayload);
+    if (actionCall.attendCallGroup.length <= 1) {
+      const notAttend = await this.groupsService.cancelCallGroup(data.idGroup);
+      return this.server.emit(
+        `outCallGroupLastUser${actionCall.attendCallGroup[0].email}`,
+        notAttend,
       );
     }
   }

@@ -165,6 +165,15 @@ export interface AnswerMessagesSingle {
   content: string;
   idMessages: string;
 }
-// export interface onlineUser {
-//   userOnline: string[];
-// }
+export interface UserAttends {
+  email: string;
+  fullName: string;
+  acceptCall: boolean;
+}
+export type GroupOne = {
+  id: string;
+  participants: User[];
+  creator: User;
+  callGroup: boolean;
+  attendCallGroup: UserAttends[];
+};
