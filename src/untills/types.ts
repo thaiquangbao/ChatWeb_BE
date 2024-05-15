@@ -177,3 +177,7 @@ export type GroupOne = {
   callGroup: boolean;
   attendCallGroup: UserAttends[];
 };
+export type UserReject = {
+  idGroups: string;
+  userOut: string;
+};

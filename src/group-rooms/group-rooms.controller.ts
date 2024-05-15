@@ -24,6 +24,7 @@ import { AuthUser } from 'src/untills/decorater';
 import { Response } from 'express';
 import { GetMessagesGroupDTO } from 'src/chat-group/dtos/chat-group.dto';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { UserReject } from 'src/untills/types';
 
 @Controller(Routes.GROUPS)
 @UseGuards(AuthenticatedGuard)
@@ -170,6 +171,31 @@ export class GroupRoomsController {
     } catch (error) {
       console.log(error);
       return res.send(error);
+    }
+  }
+  @Post('groupCall')
+  async cancelCallGroup(@Body() dataCancelCall: UpdateGroupsRooms) {
+    try {
+      const cancelCall = await this.groupServices.cancelCallGroup(
+        dataCancelCall.idGroups,
+      );
+      return cancelCall;
+    } catch (error) {
+      console.log(error);
+      return error;
+    }
+  }
+  @Post('rejectGroupCall')
+  async rejectCallGroup(@Body() dataRejectCall: UserReject) {
+    try {
+      console.log(dataRejectCall);
+      const cancelCall = await this.groupServices.rejectRequestGroup(
+        dataRejectCall.userOut,
+      );
+      return cancelCall;
+    } catch (error) {
+      console.log(error);
+      return error;
     }
   }
 }

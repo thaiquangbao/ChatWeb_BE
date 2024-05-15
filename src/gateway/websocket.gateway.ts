@@ -23,7 +23,7 @@ import { RoomsCall } from 'src/room/dto/RoomDTO.dto';
 import { Rooms } from 'src/entities/Rooms';
 import { GroupRooms } from 'src/entities/Groups';
 import { IGroups } from 'src/group-rooms/group';
-import { CallGroups } from '../group-rooms/dtos/Group.dto';
+import { ListRooms } from 'src/untills/types';
 @WebSocketGateway({
   cors: {
     origin: ['http://localhost:3000'],
@@ -64,6 +64,14 @@ export class MessagingGateway
       return this.server.emit(`userLeaveVideoStatus`, {
         status: client.session,
         roomsVideo: client.handshake.auth.roomsVideo,
+      });
+    }
+    if (client.handshake.auth.group) {
+      console.log('mượt ròi 3');
+      return this.server.emit(`memberLeaveGroupStatus${client.session}`, {
+        status: client.session,
+        group: client.handshake.auth.group,
+        userLeave: client.handshake.auth.userLeave,
       });
     }
   }
@@ -806,7 +814,10 @@ export class MessagingGateway
       ],
       call: true,
     });
-    if (roomsExistsCall.length > 0) {
+    const existCalling = await this.usersModel.findOne({
+      email: data.userCall.email,
+    });
+    if (roomsExistsCall.length > 0 || existCalling.calling === true) {
       const dataErrorCall = { errorCall: true };
       return this.server.emit(
         `userCallVoice${data.userCall.email}`,
@@ -820,7 +831,10 @@ export class MessagingGateway
       ],
       call: true,
     });
-    if (roomsWithCall.length > 0) {
+    const existCallingRecive = await this.usersModel.findOne({
+      email: data.userReciveCall,
+    });
+    if (roomsWithCall.length > 0 || existCallingRecive.calling === true) {
       const dataError = { error: true };
       return this.server.emit(`userCallVoice${data.userCall.email}`, dataError);
     }
@@ -1003,7 +1017,10 @@ export class MessagingGateway
       ],
       call: true,
     });
-    if (roomsExistsCall.length > 0) {
+    const existCalling = await this.usersModel.findOne({
+      email: data.userCall.email,
+    });
+    if (roomsExistsCall.length > 0 || existCalling.calling === true) {
       const dataErrorCall = { errorCall: true };
       return this.server.emit(
         `userCallVideo${data.userCall.email}`,
@@ -1017,7 +1034,10 @@ export class MessagingGateway
       ],
       call: true,
     });
-    if (roomsWithCall.length > 0) {
+    const existCallingRecieve = await this.usersModel.findOne({
+      email: data.userReciveCall,
+    });
+    if (roomsWithCall.length > 0 || existCallingRecieve.calling === true) {
       const dataError = { error: true };
       return this.server.emit(`userCallVideo${data.userCall.email}`, dataError);
     }
@@ -1140,23 +1160,117 @@ export class MessagingGateway
   @SubscribeMessage('userCallGroup')
   async onUserCallGroup(@MessageBody() data: any) {
     const findGroups = await this.groupsModel.findById(data.idGroups);
-    /* const groupsExistsCall = await this.groupsModel.find({
-      $or: [
-        { 'creator.email': data.userCall.email },
-        { participants: { $elemMatch: { email: data.userCall.email } } },
-      ],
-      call: true,
-    }); */
+    const existInGroup = await this.groupsModel.findOne({
+      _id: data.idGroups,
+      attendCallGroup: { $elemMatch: { email: data.userCall.email } },
+    });
+    console.log(existInGroup);
     const userIsCalling = await this.usersModel.findOne({
       email: data.userCall.email,
-      calling: true,
     });
-    if (userIsCalling) {
+    if (userIsCalling.calling === true || userIsCalling.online !== true) {
       const dataErrorCall = { errorCallGroup: true }; // bạn đó có cuộc gọi khác trong group khác
       return this.server.emit(
         `userCallGroups${data.userCall.email}`,
         dataErrorCall,
       );
+    }
+    if (findGroups.attendCallGroup.length > 0) {
+      const dataCalling = {
+        callingGroup: true,
+        group: findGroups,
+        idGroups: data.idGroups,
+      }; // bạn đó có cuộc gọi khác trong group khác
+      return this.server.emit(
+        `userCallGroups${data.userCall.email}`,
+        dataCalling,
+      );
+    }
+    if (existInGroup) {
+      const dataErrorCall = { existCallGroup: true }; // bạn đó có cuộc gọi khác trong group khác
+      return this.server.emit(
+        `userCallGroups${data.userCall.email}`,
+        dataErrorCall,
+      );
+    }
+    if (findGroups.creator.email === data.userCall.email) {
+      const resultOnline = await Promise.all(
+        findGroups.participants.map(async (user) => {
+          const userCanCall = await this.usersModel.findOne({
+            email: user.email,
+            online: true,
+          });
+          return userCanCall;
+        }),
+      );
+      const onlineUsers = resultOnline.filter((users) => users !== null);
+      /* console.log('.... creator:' + onlineUsers); */
+      const resultNotCalling = await Promise.all(
+        findGroups.participants.map(async (user) => {
+          const userCanCall = await this.usersModel.findOne({
+            email: user.email,
+            online: true,
+            calling: false,
+          });
+          return userCanCall;
+        }),
+      );
+      const isBusyUsers = resultNotCalling.filter((users) => users !== null);
+      /* console.log('.... creator:' + isBusyUsers); */
+      if (onlineUsers.length <= 0 || isBusyUsers.length <= 0) {
+        const dataError2 = { errorNotUserOnline: true };
+        return this.server.emit(
+          `userCallGroups${data.userCall.email}`,
+          dataError2,
+        );
+      }
+    }
+    if (findGroups.creator.email !== data.userCall.email) {
+      const resultOnline = await Promise.all(
+        findGroups.participants
+          .filter((participant) => participant.email !== data.userCall.email)
+          .map(async (user) => {
+            const userCanCall = await this.usersModel.findOne({
+              email: user.email,
+              online: true,
+            });
+            return userCanCall;
+          }),
+      );
+      const onlineCreator = await this.usersModel.findOne({
+        email: findGroups.creator.email,
+        online: true,
+      });
+      const onlineUsers = resultOnline.filter((users) => users !== null);
+      const resultNotCalling2 = await Promise.all(
+        findGroups.participants
+          .filter((participant) => participant.email !== data.userCall.email)
+          .map(async (user) => {
+            const userCanCall = await this.usersModel.findOne({
+              email: user.email,
+              online: true,
+              calling: false,
+            });
+            return userCanCall;
+          }),
+      );
+      const isBusyCreator = await this.usersModel.findOne({
+        email: findGroups.creator.email,
+        calling: false,
+      });
+      const isBusyUsers = resultNotCalling2.filter((users) => users !== null);
+      /* console.log('.... recipient1:' + onlineUsers);
+      console.log('.... recipient2:' + onlineCreator); */
+      if (
+        (onlineUsers.length <= 0 && !onlineCreator) ||
+        (isBusyUsers.length <= 0 && !isBusyCreator)
+      ) {
+        const dataError2 = { errorNotUserOnline: true };
+        return this.server.emit(
+          `userCallGroups${data.userCall.email}`,
+          dataError2,
+        );
+      }
     }
     const actionCall = await this.groupsService.callGroup(findGroups.id);
     const dataPayload = {
@@ -1170,7 +1284,10 @@ export class MessagingGateway
           // Thực hiện các truy vấn cùng một lúc
           const [userAlreadyOnline, usersExistsCall, usersExistsCallGroups] =
             await Promise.all([
-              this.userOnlineModel.findOne({ email: participant.email }),
+              this.usersModel.findOne({
+                email: participant.email,
+                online: true,
+              }),
               this.roomsModel.find({
                 $or: [
                   { 'recipient.email': participant.email },
@@ -1189,10 +1306,6 @@ export class MessagingGateway
                     },
                   },
                 ],
-              }),
-              this.usersModel.findOne({
-                email: participant.email,
-                calling: true,
               }),
             ]);
 
@@ -1243,7 +1356,10 @@ export class MessagingGateway
     const id = new mongoose.Types.ObjectId(idGroups);
     const [userAlreadyOnline, usersExistsCall, usersExistsCallGroups] =
       await Promise.all([
-        this.userOnlineModel.findOne({ email: email }),
+        this.usersModel.findOne({
+          email: email,
+          online: true,
+        }),
         this.roomsModel.find({
           $or: [{ 'recipient.email': email }, { 'creator.email': email }],
           call: true,
@@ -1396,12 +1512,86 @@ export class MessagingGateway
       userLeave: data.userLeave,
     };
     this.server.emit(`outCallGroup${data.userLeave.email}`, dataPayload);
-    if (actionCall.attendCallGroup.length <= 1) {
+    if (actionCall.attendCallGroup.length === 1) {
       const notAttend = await this.groupsService.cancelCallGroup(data.idGroup);
+      const dataPayload2 = {
+        groupCall: notAttend,
+        userLeave: data.userLeave,
+      };
       return this.server.emit(
         `outCallGroupLastUser${actionCall.attendCallGroup[0].email}`,
-        notAttend,
+        dataPayload2,
       );
     }
+  }
+  @SubscribeMessage('memberOutMeetGroup')
+  async handleOutMeetGroup(
+    @MessageBody() data: any,
+    @ConnectedSocket() client: any,
+  ) {
+    console.log(data.idGroup);
+    client.handshake.auth = {
+      group: data.idGroup,
+      userLeave: data.user.email,
+    };
+  }
+  @SubscribeMessage('preJoinMemberHomeGroup')
+  async handleJoinMemberMeetGroup(
+    @MessageBody() data: any,
+    @ConnectedSocket() client: any,
+  ) {
+    const findUser = await this.usersModel.findOne({ email: data.userLeave });
+    const userOnlineRecipient = await this.groupsService.memberReturnHome(
+      findUser.email,
+    );
+    this.server.emit(
+      `memberOnlineMeetOut${userOnlineRecipient.email}`,
+      findUser,
+    );
+    const findOnline: ListRooms[] = await this.roomsModel.find({
+      $or: [
+        { 'recipient.email': data.userLeave },
+        { 'creator.email': data.userLeave },
+      ],
+    });
+    client.handshake.auth = {};
+    findUser.friends.forEach(async (friend) => {
+      return this.server.emit(
+        `memberOnlineAfterMeetGroup${friend.email}`,
+        userOnlineRecipient,
+      );
+    });
+    findOnline.forEach(async (room) => {
+      return this.server.emit(`userOnlineAfterMeetGroup${room.id}`, findOnline);
+    });
+  }
+  @SubscribeMessage('userCanAttendCallGroups')
+  async handleAttendMeetGroup(@MessageBody() data: any) {
+    const findGroups = await this.groupsModel.findById(data.idGroups);
+    if (findGroups.callGroup !== true) {
+      const dataError = { error: true };
+      return this.server.emit(
+        `userAttendCallGroups${data.user.email}`,
+        dataError,
+      );
+    }
+    const dataPush = {
+      email: data.user.email,
+      fullName: data.user.fullName,
+      acceptCall: true,
+    };
+    await this.usersModel.findOneAndUpdate(
+      { email: data.user.email },
+      { calling: true },
+    );
+    const addCallGroup = await this.groupsModel.findByIdAndUpdate(
+      data.idGroups,
+      { $push: { attendCallGroup: dataPush } },
+      { new: true },
+    );
+    return this.server.emit(
+      `userAttendCallGroups${data.user.email}`,
+      addCallGroup,
+    );
   }
 }

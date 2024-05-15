@@ -15,6 +15,7 @@ import mongoose, { Model } from 'mongoose';
 import { IUserService } from 'src/users/users';
 import { Services } from 'src/untills/constain';
 import { CallGroups } from './dtos/group.dto';
+import { Rooms } from 'src/entities/Rooms';
 
 @Injectable()
 export class GroupRoomsService implements IGroups {
@@ -22,7 +23,46 @@ export class GroupRoomsService implements IGroups {
     @InjectModel(User.name) private usersModel: Model<User>,
     @InjectModel(GroupRooms.name) private groupsModel: Model<GroupRooms>,
     @Inject(Services.USERS) private readonly userService: IUserService,
+    @InjectModel(Rooms.name) private roomsModel: Model<Rooms>,
   ) {}
+  async rejectRequestGroup(userReject: string): Promise<CallGroups> {
+    const existGroups = await this.groupsModel.findOne({
+      attendCallGroup: { $elemMatch: { email: userReject } },
+    });
+    const dataOut = { email: userReject };
+    const result: GroupOne = await this.groupsModel.findByIdAndUpdate(
+      existGroups.id,
+      {
+        $pull: { attendCallGroup: dataOut },
+      },
+      { new: true },
+    );
+    await this.usersModel.updateOne({ email: userReject }, { calling: false });
+    return result;
+  }
+  async memberReturnHome(email: string): Promise<UsersPromise> {
+    const userExist = await this.usersModel.findOne({
+      email: email,
+    });
+    await this.roomsModel.updateMany(
+      {
+        'creator.email': userExist.email,
+      },
+      { $set: { 'creator.online': true } },
+    );
+    await this.roomsModel.updateMany(
+      {
+        'recipient.email': userExist.email,
+      },
+      { $set: { 'recipient.online': true } },
+    );
+    const newUser: UsersPromise = await this.usersModel.findOneAndUpdate(
+      { email: userExist.email },
+      { online: true },
+      { new: true },
+    );
+    return newUser;
+  }
   async acceptCallGroup(
     id: string,
     userAccept: string,
@@ -112,7 +152,7 @@ export class GroupRoomsService implements IGroups {
       email: existGroups.creator.email,
       online: true,
     });
-    if (userOnline) {
+    if (userOnline && userOnline.calling === false) {
       await this.usersModel.updateOne(
         { email: existGroups.creator.email },
         { calling: true },
@@ -133,7 +173,7 @@ export class GroupRoomsService implements IGroups {
           email: participant.email,
           online: true,
         });
-        if (userOnlineReci) {
+        if (userOnlineReci && userOnlineReci.calling === false) {
           await this.usersModel.findOneAndUpdate(
             { email: participant.email },
             { calling: true },

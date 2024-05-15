@@ -7,6 +7,7 @@ import { Messages, MessagesSchema } from 'src/entities/Message';
 import { GroupRooms, GroupRoomsSchema } from 'src/entities/Groups';
 import { Services } from 'src/untills/constain';
 import { UsersModule } from 'src/users/users.module';
+import { Rooms, RoomsSchema } from 'src/entities/Rooms';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { UsersModule } from 'src/users/users.module';
       { name: Messages.name, schema: MessagesSchema },
     ]),
     UsersModule,
+    MongooseModule.forFeature([{ name: Rooms.name, schema: RoomsSchema }]),
   ],
   controllers: [GroupRoomsController],
   providers: [

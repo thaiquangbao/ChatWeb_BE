@@ -33,4 +33,6 @@ export interface IGroups {
     nameAccept: string,
     userCall: string,
   ): Promise<CallGroups>;
+  memberReturnHome(email: string): Promise<UsersPromise>;
+  rejectRequestGroup(userReject: string): Promise<CallGroups>;
 }
