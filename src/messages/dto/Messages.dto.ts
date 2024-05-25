@@ -31,3 +31,7 @@ export class MessagesRoomsUpdate {
   messagesUpdate: Messages;
   roomsUpdate: Rooms;
 }
+export class ForwardMessagesDTO {
+  idRooms?: string[];
+  idGroups?: string[];
+}

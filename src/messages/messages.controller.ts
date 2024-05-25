@@ -15,7 +15,11 @@ import {
 } from '@nestjs/common';
 import { Routes, Services } from '../untills/constain';
 import { IMessageService } from './messages';
-import { CreateMessagesDTO, RoomMessages } from './dto/Messages.dto';
+import {
+  CreateMessagesDTO,
+  ForwardMessagesDTO,
+  RoomMessages,
+} from './dto/Messages.dto';
 import { AuthUser } from 'src/untills/decorater';
 import { UsersPromise } from 'src/auth/dtos/Users.dto';
 import { Response } from 'express';
@@ -37,7 +41,7 @@ export class MessagesController {
     private readonly messageServices: IMessageService,
     private readonly events: EventEmitter2,
     private readonly cloudinaryServices: CloudinaryService,
-  ) {}
+  ) { }
   @Post()
   async createMessage(
     @AuthUser() user: UsersPromise,
@@ -174,6 +178,17 @@ export class MessagesController {
       return res.send(messages).status(HttpStatus.OK);
     } catch (error) {
       return res.send(error);
+    }
+  }
+  @Post('forwardMessages')
+  async forwardMessages(@Body() list: ForwardMessagesDTO) {
+    try {
+      const messages = await this.messageServices.forwardMessages(list);
+      return messages;
+      //this.events.emit('messages.forward', messages);
+      //return messages;
+    } catch (error) {
+      return error;
     }
   }
 }

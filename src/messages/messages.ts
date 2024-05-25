@@ -4,6 +4,7 @@ import {
   CreateMessageParams,
   CreateMessageResponse,
   DeleteMessages,
+  ForwardMessages,
   UpdateEmoji,
   UpdateMessages,
 } from 'src/untills/types';
@@ -30,4 +31,5 @@ export interface IMessageService {
     answerMessages: AnswerMessagesSingle,
     user: UsersPromise,
   );
+  forwardMessages(infoMessages: ForwardMessages): Promise<ForwardMessages>;
 }

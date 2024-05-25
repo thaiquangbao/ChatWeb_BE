@@ -1,6 +1,7 @@
 import { IsNotEmpty, IsString } from 'class-validator';
 import { UsersPromise } from '../../auth/dtos/Users.dto';
 import { User } from 'src/entities/users';
+import { ObjectId } from 'mongoose';
 
 export class RoomDTO {
   @IsString()
@@ -18,4 +19,7 @@ export class RoomsPromise {
 export class RoomsCall {
   recipient: User;
   creator: User;
+}
+export class RoomsOnlyId {
+  _id: ObjectId[];
 }

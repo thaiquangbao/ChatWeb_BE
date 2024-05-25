@@ -8,6 +8,7 @@ import {
   CreateMessageParams,
   CreateMessageResponse,
   DeleteMessages,
+  ForwardMessages,
   UpdateEmoji,
   UpdateMessages,
 } from '../untills/types';
@@ -15,13 +16,41 @@ import { Rooms } from 'src/entities/Rooms';
 import { RoomsPromise } from 'src/room/dto/RoomDTO.dto';
 import { MessagesRoomsUpdate } from './dto/Messages.dto';
 import { UsersPromise } from 'src/auth/dtos/Users.dto';
+import { GroupRooms } from 'src/entities/Groups';
 
 @Injectable()
 export class MessagesService implements IMessageService {
   constructor(
     @InjectModel(Messages.name) private readonly messagesModel: Model<Messages>,
     @InjectModel(Rooms.name) private roomsModel: Model<Rooms>,
-  ) {}
+    @InjectModel(GroupRooms.name) private groupsModel: Model<GroupRooms>,
+  ) { }
+  async forwardMessages(
+    infoMessages: ForwardMessages,
+  ): Promise<ForwardMessages> {
+    const { idRooms, idGroups } = infoMessages;
+    let groupsPromise = [];
+    let roomsPromise = [];
+    if (idRooms.length > 0) {
+      const roomsRequest = idRooms.map(async (id) => {
+        const rooms = await this.roomsModel.findById(id);
+        return rooms.id;
+      });
+      roomsPromise = (await Promise.all(roomsRequest)).map((room) => {
+        return room;
+      });
+    }
+    if (idGroups.length > 0) {
+      const groupsRequest = idGroups.map(async (id) => {
+        const groups = await this.groupsModel.findById(id);
+        return groups.id;
+      });
+      groupsPromise = (await Promise.all(groupsRequest)).map((group) => {
+        return group;
+      });
+    }
+    return { idRooms: roomsPromise, idGroups: groupsPromise };
+  }
   async feedbackMessagesSingle(
     id: string,
     answerMessages: AnswerMessagesSingle,

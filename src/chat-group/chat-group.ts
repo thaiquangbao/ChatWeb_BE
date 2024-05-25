@@ -5,6 +5,7 @@ import {
   CreateMessageGroupParams,
   CreateMessageRoomsResponse,
   DeleteMessages,
+  ForwardMessages,
   UpdateEmoji,
   UpdateGroupsMessages,
 } from 'src/untills/types';
@@ -30,4 +31,7 @@ export interface IMessageGroupsService {
     id: string,
     updateEmoji: UpdateEmoji,
   ): Promise<MessagesGroupsUpdate>;
+  forwardMessagesGroups(
+    infoMessages: ForwardMessages,
+  ): Promise<ForwardMessages>;
 }

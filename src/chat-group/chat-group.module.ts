@@ -8,6 +8,8 @@ import { Services } from 'src/untills/constain';
 import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
 import { CloudinaryProvider } from 'src/cloudinary/cloudinary.provider';
 import { MessagesGroup, MessagesGroupSchema } from 'src/entities/MessagesGroup';
+import { Messages, MessagesSchema } from 'src/entities/Message';
+import { Rooms, RoomsSchema } from 'src/entities/Rooms';
 
 @Module({
   imports: [
@@ -17,6 +19,10 @@ import { MessagesGroup, MessagesGroupSchema } from 'src/entities/MessagesGroup';
     MongooseModule.forFeature([
       { name: MessagesGroup.name, schema: MessagesGroupSchema },
     ]),
+    MongooseModule.forFeature([
+      { name: Messages.name, schema: MessagesSchema },
+    ]),
+    MongooseModule.forFeature([{ name: Rooms.name, schema: RoomsSchema }]),
     CloudinaryModule,
   ],
   controllers: [ChatGroupController],
@@ -35,4 +41,4 @@ import { MessagesGroup, MessagesGroupSchema } from 'src/entities/MessagesGroup';
     },
   ],
 })
-export class ChatGroupModule {}
+export class ChatGroupModule { }

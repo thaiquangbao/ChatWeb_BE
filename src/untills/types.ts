@@ -181,3 +181,7 @@ export type UserReject = {
   idGroups: string;
   userOut: string;
 };
+export type ForwardMessages = {
+  idRooms?: string[];
+  idGroups?: string[];
+};

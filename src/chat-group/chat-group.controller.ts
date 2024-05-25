@@ -31,6 +31,7 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 import { MessagesGroup } from 'src/entities/MessagesGroup';
 import { Model } from 'mongoose';
+import { ForwardMessagesDTO } from 'src/messages/dto/Messages.dto';
 @Controller(Routes.CHATGROUPS)
 @UseGuards(AuthenticatedGuard)
 export class ChatGroupController {
@@ -41,7 +42,7 @@ export class ChatGroupController {
     private readonly chatGroupModel: Model<MessagesGroup>,
     private readonly events: EventEmitter2,
     private readonly cloudinaryServices: CloudinaryService,
-  ) {}
+  ) { }
   @Post()
   async createMessage(
     @AuthUser() user: UsersPromise,
@@ -159,6 +160,17 @@ export class ChatGroupController {
       return res.send(updateEmoji);
     } catch (error) {
       return res.send(error);
+    }
+  }
+  @Post('forwardMessages')
+  async forwardMessagesGroups(@Body() list: ForwardMessagesDTO) {
+    try {
+      const messages = await this.chatGroupServices.forwardMessagesGroups(list);
+      return messages;
+      //this.events.emit('messages.forward', messages);
+      //return messages;
+    } catch (error) {
+      return error;
     }
   }
 }
